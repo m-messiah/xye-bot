@@ -1,0 +1,4 @@
+.idea
+*.pyc
+bot_token.py
+lib/
