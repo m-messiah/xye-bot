@@ -57,8 +57,8 @@ def index():
                                  chat['username'] if 'username' in chat
                                  else chat['id'])
                 if text == "/start" or text == "/help":
-                    send_reply("Привет! Я бот-хуеплёт.\n"
-                               "Я буду хуифицировать некоторые из твоих фраз",
+                    send_reply(u"Привет! Я бот-хуеплёт.\n"
+                               u"Я буду хуифицировать некоторые из твоих фраз",
                                chat["id"])
                 else:
                     response = huify(text)
