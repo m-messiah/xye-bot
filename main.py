@@ -56,10 +56,14 @@ def index():
                 app.logger.debug("MESSAGE FROM\t%s",
                                  chat['username'] if 'username' in chat
                                  else chat['id'])
-
-                response = huify(text)
-                if response:
-                    send_reply(response, chat['id'])
+                if text == "/start" or text == "/help":
+                    send_reply("Привет! Я бот-хуеплёт.\n"
+                               "Я буду хуифицировать некоторые из твоих фраз",
+                               chat["id"])
+                else:
+                    response = huify(text)
+                    if response:
+                        send_reply(response, chat['id'])
             return jsonify(result="OK", text="Accepted")
         except Exception as e:
             app.logger.warning(str(e))
