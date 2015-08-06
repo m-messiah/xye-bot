@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from google.appengine.api import urlfetch
 import re
 app = Flask(__name__)
-app.config['DEBUG'] = True
+app.config['DEBUG'] = False
 
 try:
     from bot_token import BOT_TOKEN
