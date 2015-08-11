@@ -4,6 +4,7 @@ import urllib
 from flask import Flask, request, jsonify
 from google.appengine.api import urlfetch
 import re
+from random import randint
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
@@ -18,6 +19,7 @@ MyURL = "https://xye-bot.appspot.com"
 NON_LETTERS = re.compile(ur'[^а-яё \-]+', flags=re.UNICODE)
 PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщ]+", flags=re.UNICODE)
 
+DELAY = {}
 
 def error():
     return 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)'
@@ -61,9 +63,16 @@ def index():
                                u"Я буду хуифицировать некоторые из твоих фраз",
                                chat["id"])
                 else:
-                    response = huify(text)
-                    if response:
-                        send_reply(response, chat['id'])
+                    if chat['id'] not in DELAY:
+                        DELAY[chat['id']] = randint(0, 4)
+                    else:
+                        DELAY[chat['id']] -= 1
+                    if DELAY[chat['id']] == 0:
+                        response = huify(text)
+                        if response:
+                            send_reply(response, chat['id'])
+                        del DELAY[chat['id']]
+                    
             return jsonify(result="OK", text="Accepted")
         except Exception as e:
             app.logger.warning(str(e))
