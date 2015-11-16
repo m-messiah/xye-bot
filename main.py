@@ -2,7 +2,6 @@
 from os import environ
 import urllib
 from flask import Flask, request, jsonify
-from google.appengine.api import urlfetch
 import re
 from random import randint
 app = Flask(__name__)
@@ -25,21 +24,6 @@ def error():
     return 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)'
 
 
-def send_reply(response, chat_id):
-    response = {
-        'chat_id': chat_id,
-        'text': response.encode("utf8")
-    }
-    app.logger.debug("SENT\t%s", response)
-    payload = urllib.urlencode(response)
-    if response['text'] == '':
-        return
-    o = urlfetch.fetch(URL + "sendMessage",
-                       payload=payload,
-                       method=urlfetch.POST)
-    app.logger.debug(str(o.content))
-
-
 @app.route('/', methods=['POST', 'GET'])
 def index():
     if request.method == 'GET':
@@ -59,9 +43,13 @@ def index():
                                  chat['username'] if 'username' in chat
                                  else chat['id'])
                 if text == "/start" or text == "/help":
-                    send_reply(u"Привет! Я бот-хуебот.\n"
-                               u"Я буду хуифицировать некоторые из твоих фраз",
-                               chat["id"])
+                    return jsonify(
+                        method="sendMessage",
+                        chat_id=chat['id'],
+                        text=u"Привет! Я бот-хуебот.\n"
+                             u"Я буду хуифицировать "
+                             u"некоторые из твоих фраз"
+                    )
                 else:
                     if chat['id'] not in DELAY:
                         DELAY[chat['id']] = randint(0, 4)
@@ -69,11 +57,15 @@ def index():
                         DELAY[chat['id']] -= 1
                     if DELAY[chat['id']] == 0:
                         response = huify(text)
-                        if response:
-                            send_reply(response, chat['id'])
                         del DELAY[chat['id']]
+                        if response:
+                            return jsonify(
+                                method="sendMessage",
+                                chat_id=chat['id'],
+                                text=response
+                            )
                     
-            return jsonify(result="OK", text="Accepted")
+            return jsonify(result="SKIP", text="SKIP")
         except Exception as e:
             app.logger.warning(str(e))
             return jsonify(result="Fail", text=str(e))
