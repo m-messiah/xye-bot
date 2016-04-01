@@ -7,14 +7,6 @@ from random import randint
 app = Flask(__name__)
 app.config['DEBUG'] = False
 
-try:
-    from bot_token import BOT_TOKEN
-except ImportError:
-    BOT_TOKEN = environ["TOKEN"]
-
-URL = "https://api.telegram.org/bot%s/" % BOT_TOKEN
-MyURL = "https://xye-bot.appspot.com"
-
 NON_LETTERS = re.compile(ur'[^а-яё \-]+', flags=re.UNICODE)
 PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщ]+", flags=re.UNICODE)
 
