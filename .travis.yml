@@ -11,7 +11,7 @@ install:
 script:
   - nosetests
 before_deploy:
-  - rm -rf google_appengine_1.9.36.zip google_appengine
+  - rm -rf google_appengine_1.9.36.zip google_appengine .git
 deploy:
   provider: gae
   skip_cleanup: true
