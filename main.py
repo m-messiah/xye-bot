@@ -1,66 +1,63 @@
 # coding=utf-8
-from os import environ
-import urllib
-from flask import Flask, request, jsonify
-import re
+import logging
+import webapp2
+from webapp2_extras import json
+from re import compile, UNICODE
 from random import randint
-app = Flask(__name__)
-app.config['DEBUG'] = False
 
-NON_LETTERS = re.compile(ur'[^а-яё \-]+', flags=re.UNICODE)
-PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщьъ]+", flags=re.UNICODE)
+NON_LETTERS = compile(ur'[^а-яё \-]+', flags=UNICODE)
+PREFIX = compile(u"^[бвгджзйклмнпрстфхцчшщьъ]+", flags=UNICODE)
 
 DELAY = {}
 
-def error():
-    return 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)'
 
+class MainPage(webapp2.RequestHandler):
+    def show_error(self):
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.write(json.encode({
+            'result': "Info",
+            "name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)'
+        }))
 
-@app.route('/', methods=['POST', 'GET'])
-def index():
-    if request.method == 'GET':
-        return error()
-    else:
-        if 'Content-Type' not in request.headers:
-            return error()
-        if request.headers['Content-Type'] != 'application/json':
-            return error()
+    def get(self):
+        return self.show_error()
+
+    def post(self):
+        if 'Content-Type' not in self.request.headers:
+            return self.show_error()
+        if 'application/json' not in self.request.headers['Content-Type']:
+            return self.show_error()
         try:
-            update = request.json
+            update = json.decode(self.request.body)
+        except Exception:
+            return self.show_error()
+        response = {'text': None}
+        if 'message' in update:
             message = update['message']
-            chat = message['chat']
-            text = message.get('text')
-            if text:
-                app.logger.debug("MESSAGE FROM\t%s",
-                                 chat['username'] if 'username' in chat
-                                 else chat['id'])
-                if text == "/start" or text == "/help":
-                    return jsonify(
-                        method="sendMessage",
-                        chat_id=chat['id'],
-                        text=u"Привет! Я бот-хуебот.\n"
-                             u"Я буду хуифицировать "
-                             u"некоторые из твоих фраз"
-                    )
+            if 'chat' in message and 'text' in message:
+                text = message['text']
+                chat_id = message['chat']['id']
+                logging.debug(message)
+                if "/start" in text or "/help" in text:
+                    response = {
+                        'method': "sendMessage",
+                        'chat_id': chat_id,
+                        'text': u"Привет! Я бот-хуебот.\n"
+                                u"Я буду хуифицировать "
+                                u"некоторые из твоих фраз"}
                 else:
-                    if chat['id'] not in DELAY:
-                        DELAY[chat['id']] = randint(0, 4)
+                    if chat_id not in DELAY:
+                        DELAY[chat_id] = randint(0, 4)
                     else:
-                        DELAY[chat['id']] -= 1
-                    if DELAY[chat['id']] == 0:
-                        response = huify(text)
-                        del DELAY[chat['id']]
-                        if response:
-                            return jsonify(
-                                method="sendMessage",
-                                chat_id=chat['id'],
-                                text=response
-                            )
-                    
-            return jsonify(result="SKIP", text="SKIP")
-        except Exception as e:
-            app.logger.warning(str(e))
-            return jsonify(result="Fail", text=str(e))
+                        DELAY[chat_id] -= 1
+                    if DELAY[chat_id] == 0:
+                        del DELAY[chat_id]
+                        response = {
+                            'method': "sendMessage",
+                            'chat_id': chat_id,
+                            'text': huify(text)}
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.write(json.encode(response if response['text'] else {}))
 
 
 def huify(text):
@@ -86,3 +83,8 @@ def huify(text):
                 return u'ху%s' % postfix[1:]
     else:
         return u"ху%s" % postfix
+
+app = webapp2.WSGIApplication([('/', MainPage)])
+
+if __name__ == '__main__':
+    app.run()
