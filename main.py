@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['DEBUG'] = False
 
 NON_LETTERS = re.compile(ur'[^а-яё \-]+', flags=re.UNICODE)
-PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщь]+", flags=re.UNICODE)
+PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщьъ]+", flags=re.UNICODE)
 
 DELAY = {}
 
