@@ -1,4 +1,5 @@
 .idea
 *.pyc
-bot_token.py
 lib/
+__pycache__
+client_secret.json
