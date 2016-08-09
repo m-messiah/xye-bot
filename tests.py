@@ -21,9 +21,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
+             "result": "Info"})
 
     def test_get(self):
         request = webapp2.Request.blank("/")
@@ -31,9 +31,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
+             "result": "Info"})
 
     def test_bad_post(self):
         request = webapp2.Request.blank("/")
@@ -42,9 +42,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
+             "result": "Info"})
 
     def test_json_empty_post(self):
         request = webapp2.Request.blank("/")
@@ -54,9 +54,9 @@ class TestApp(TestCase):
         self.assertEqual(response.status_int, 200)
         self.assertIn("application/json", response.headers['Content-Type'])
         self.assertDictEqual(
-                json.decode(response.body),
-                {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
-                 "result": "Info"})
+            json.decode(response.body),
+            {"name": 'Hello World! I am XyE_bot (https://telegram.me/xye_bot)',
+             "result": "Info"})
 
     def test_json_start_post(self):
         request = webapp2.Request.blank("/")
@@ -97,8 +97,29 @@ class TestApp(TestCase):
                 }
         )
 
-    def test_huify(self):
+    def test_huify_rus(self):
         self.assertEqual(huify(u'привет'), u"хуивет")
         self.assertEqual(huify(u'привет бот'), u"хуебот")
         self.assertEqual(huify(u'доброе утро'), u"хуютро")
         self.assertEqual(huify(u'ты пьяный'), u"хуяный")
+        self.assertEqual(huify(u'были'), u"хуили")
+        self.assertEqual(huify(u'китайцы'), u"хуитайцы")
+
+    def test_huify_huified(self):
+        self.assertEqual(huify(u'хуитайцы'), None)
+        self.assertEqual(huify(u'хуютро'), None)
+        self.assertEqual(huify(u'хутор'), u"хуютор")
+
+    def test_huify_non_rus(self):
+        self.assertEqual(huify(u'hello'), None)
+        self.assertEqual(huify(u'123'), None)
+
+    def test_huify_dash(self):
+        self.assertEqual(huify(u'когда-то'), u"хуегда-то")
+        self.assertEqual(huify(u'semi-drive'), None)
+        self.assertEqual(huify(u'шалтай-болтай'), u"хуялтай-болтай")
+        self.assertEqual(huify(u'https://www.edx.org/by-sec-li-mitx-3'), None)
+
+    def test_huify_url(self):
+        self.assertEqual(huify(u'сайт.рф'), u"хуяйтрф")
+        self.assertEqual(huify(u'http://www.ru'), None)
