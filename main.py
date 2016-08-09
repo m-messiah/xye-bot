@@ -1,12 +1,13 @@
 # coding=utf-8
 import logging
+import re
 import webapp2
 from webapp2_extras import json
-from re import compile, UNICODE
 from random import randint
 
-NON_LETTERS = compile(ur'[^а-яё \-]+', flags=UNICODE)
-PREFIX = compile(u"^[бвгджзйклмнпрстфхцчшщьъ]+", flags=UNICODE)
+NON_LETTERS = re.compile(u'[^а-яё \-]+', flags=re.UNICODE)
+ONLY_DASHES = re.compile(u'^\-+$', flags=re.UNICODE)
+PREFIX = re.compile(u"^[бвгджзйклмнпрстфхцчшщьъ]+", flags=re.UNICODE)
 
 DELAY = {}
 
@@ -61,18 +62,21 @@ class MainPage(webapp2.RequestHandler):
 
 
 def huify(text):
-    vowels = {u'о', u'е', u'а', u'я', u'у', u'ю'}
-    rules = {u'о': u'е', u'а': u'я', u'у': u'ю'}
+    vowels = {u'о', u'е', u'а', u'я', u'у', u'ю', u'ы'}
+    rules = {u'о': u'е', u'а': u'я', u'у': u'ю', u'ы': u'и'}
     words = text.split()
     if len(words) > 3:
         return None
     word = NON_LETTERS.sub(u"", words[-1].lower())
-    postfix = PREFIX.sub(u"",  word)
+    if ONLY_DASHES.match(word):
+        return None
+    postfix = PREFIX.sub(u"", word)
+    if word[:2] == u"ху" and postfix[1] in rules.values():
+        return None
     if word == u"бот":
         return u'хуебот'
     if len(postfix) < 3:
         return None
-
     if postfix[0] in rules:
         if postfix[1] not in vowels:
             return u"ху%s%s" % (rules[postfix[0]], postfix[1:])
