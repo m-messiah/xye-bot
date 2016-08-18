@@ -9,4 +9,3 @@ deploy:
   version: go
   keyfile: client_secret.json
   project: xye-bot
-  on: go
