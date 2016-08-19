@@ -1,20 +1,20 @@
 package xyebot
 
 import (
-    "encoding/json"
-    "google.golang.org/appengine"
-    "google.golang.org/appengine/log"
-    "io/ioutil"
-    "math/rand"
-    "net/http"
-    "strings"
+	"encoding/json"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
+	"io/ioutil"
+	"math/rand"
+	"net/http"
+	"strings"
 )
 
 func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
-    msg := Response{Chatid: chat_id, Text: text, Method: "sendMessage"}
-    w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-    w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(msg)
+	msg := Response{Chatid: chat_id, Text: text, Method: "sendMessage"}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(msg)
 }
 
 func init() {
@@ -22,11 +22,11 @@ func init() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
-        ctx := appengine.NewContext(r)
+		ctx := appengine.NewContext(r)
 
 		var update Update
 		json.Unmarshal(bytes, &update)
-        if update.Message == nil {
+		if update.Message == nil {
 			return
 		}
 
@@ -41,8 +41,8 @@ func init() {
 			}
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
-                log.Debugf(ctx, string(bytes))
-                log.Infof(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
+				log.Debugf(ctx, string(bytes))
+				log.Infof(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
 				output := huify(update.Message.Text)
 				if output != "" {
 					sendMessage(w, update.Message.Chat.ID, output)
