@@ -17,6 +17,10 @@ func TestRussian(t *testing.T) {
     AssertEqual(t, huify("ты пьяный"), "хуяный")
     AssertEqual(t, huify("были"), "хуили")
     AssertEqual(t, huify("китайцы"), "хуитайцы")
+    AssertEqual(t, huify("в"), "")
+    AssertEqual(t, huify("в "), "")
+    AssertEqual(t, huify(" в"), "")
+    AssertEqual(t, huify(""), "")
 }
 
 func TestHuified(t *testing.T) {
@@ -26,6 +30,10 @@ func TestHuified(t *testing.T) {
 }
 func TestNonRus(t *testing.T) {
     AssertEqual(t, huify("hello"), "")
+    AssertEqual(t, huify("h"), "")
+    AssertEqual(t, huify("h w"), "")
+    AssertEqual(t, huify("h "), "")
+    AssertEqual(t, huify(" h"), "")
     AssertEqual(t, huify("123"), "")
 }
 func TestDashed(t *testing.T) {

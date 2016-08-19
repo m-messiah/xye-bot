@@ -3,10 +3,11 @@ package xyebot
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"strings"
+    "google.golang.org/appengine"
+    "google.golang.org/appengine/log"
 )
 
 func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
@@ -21,6 +22,7 @@ func init() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
+        ctx := appengine.NewContext(r)
 
 		var update Update
 		json.Unmarshal(bytes, &update)
@@ -39,7 +41,7 @@ func init() {
 			}
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
-                log.Printf("[%v] %s", update.Message.Chat.ID, update.Message.Text)
+                log.Debugf(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
 				output := huify(update.Message.Text)
 				if output != "" {
 					sendMessage(w, update.Message.Chat.ID, output)

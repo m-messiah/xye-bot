@@ -13,10 +13,12 @@ func huify(text string) string {
     ONLY_DASHES, _ := regexp.Compile("^-*$")
     PREFIX, _ := regexp.Compile("^[бвгджзйклмнпрстфхцчшщьъ]+")
     words := strings.Fields(text)
-    if len(words) > 3 {
+    if len(words) > 3 || len(words) < 1 {
         return ""
     }
+
     word := NON_LETTERS.ReplaceAllString(strings.ToLower(words[len(words)-1]), "")
+
     if word == "бот" {
         return "хуебот"
     }
@@ -24,7 +26,7 @@ func huify(text string) string {
         return ""
     }
     postfix := PREFIX.ReplaceAllString(word, "")
-    if word[:4] == "ху" && strings.Index(rules_values, string(postfix[2:4])) >= 0 || len(postfix) < 6 {
+    if len(postfix) < 6 || word[:4] == "ху" && strings.Index(rules_values, string(postfix[2:4])) >= 0 {
         return ""
     }
     if _, ok := rules[postfix[0:2]]; ok {
