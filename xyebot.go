@@ -41,8 +41,8 @@ func init() {
 			}
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
-                log.Debugln(ctx, string(bytes))
-                log.Debugf(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
+                log.Debugf(ctx, string(bytes))
+                log.Infof(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
 				output := huify(update.Message.Text)
 				if output != "" {
 					sendMessage(w, update.Message.Chat.ID, output)
