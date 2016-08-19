@@ -1,13 +1,13 @@
 package xyebot
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"math/rand"
-	"net/http"
-	"strings"
+    "encoding/json"
     "google.golang.org/appengine"
     "google.golang.org/appengine/log"
+    "io/ioutil"
+    "math/rand"
+    "net/http"
+    "strings"
 )
 
 func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
@@ -31,7 +31,7 @@ func init() {
 		}
 
 		if strings.Contains(update.Message.Text, "/start") || strings.Contains(update.Message.Text, "/help") {
-			sendMessage(w, update.Message.Chat.ID, "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из твоих фраз")
+			sendMessage(w, update.Message.Chat.ID, "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз")
 			return
 		} else {
 			if _, ok := DELAY[update.Message.Chat.ID]; ok {

@@ -1,11 +1,32 @@
 package xyebot
 
 import (
+    "math/rand"
     "regexp"
     "strings"
 )
 
+var Suggestions = [...]string{
+    "Возможно, вы имели ввиду: ",
+    "Извините, ",
+    "Извините, но ",
+    "Простите, ",
+    "Подождите, ",
+}
+
 func huify(text string) string {
+    // Cultural huify
+    huified := _huify(text)
+    if huified == "" {
+        return ""
+    }
+    if rand.Intn(100) < 30 {
+        return Suggestions[rand.Intn(len(Suggestions))] + huified
+    }
+    return huified
+}
+
+func _huify(text string) string {
     const vowels string = "оеаяуюы"
     const rules_values string = "еяюи"
     rules := map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
