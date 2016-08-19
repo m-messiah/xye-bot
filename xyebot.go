@@ -6,8 +6,8 @@ import (
 	"math/rand"
 	"net/http"
 	"strings"
-    "google.golang.org/appengine"
-    "google.golang.org/appengine/log"
+    "fmt"
+    "os"
 )
 
 func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
@@ -22,7 +22,6 @@ func init() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
-        ctx := appengine.NewContext(r)
 
 		var update Update
 		json.Unmarshal(bytes, &update)
@@ -41,7 +40,7 @@ func init() {
 			}
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
-                log.Debugf(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
+                fmt.Fprintf(os.Stderr, "[%v] %s\n", update.Message.Chat.ID, string(bytes))
 				output := huify(update.Message.Text)
 				if output != "" {
 					sendMessage(w, update.Message.Chat.ID, output)
