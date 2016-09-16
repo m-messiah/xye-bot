@@ -6,33 +6,12 @@ import (
 	"strings"
 )
 
-var Suggestions = [...]string{
-	"Возможно, вы имели ввиду: ",
-	"Все свои люди, ",
-	"Давай прямо, ",
-	"Давайте называть вещи своими именами, ",
-	"Другими словами, ",
-	"Извините, ",
-	"Извините, но ",
-	"Или, как я бы сказал, ",
-	"Не стесняйся, ",
-	"Ну как бы, ",
-	"Подождите, ",
-	"Поправочка, ",
-	"Простите, ",
-	"Чего уж скрывать, ",
-	"Я бы сказал, ",
-}
-
 func huify(text string) string {
-	// Cultural huify
 	huified := _huify(text)
 	if huified == "" {
 		return ""
 	}
-	if rand.Intn(100) < 30 {
-		return Suggestions[rand.Intn(len(Suggestions))] + huified
-	}
+
 	return huified
 }
 
