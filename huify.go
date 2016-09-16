@@ -1,7 +1,6 @@
 package xyebot
 
 import (
-	"math/rand"
 	"regexp"
 	"strings"
 )
