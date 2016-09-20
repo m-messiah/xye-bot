@@ -24,13 +24,12 @@ var Suggestions = [...]string{
 	"Я бы сказал, ",
 }
 
-func huify(text string) string {
-	// Cultural huify
+func huify(text string, gentle bool) string {
 	huified := _huify(text)
 	if huified == "" {
 		return ""
 	}
-	if rand.Intn(100) < 30 {
+	if gentle && rand.Intn(100) > 20 {
 		return Suggestions[rand.Intn(len(Suggestions))] + huified
 	}
 	return huified
