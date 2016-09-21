@@ -20,7 +20,7 @@ func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
 
 func init() {
 	DELAY := make(map[int64]int)
-	GENTLE := true
+	GENTLE := make(map[int64]bool)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
@@ -32,9 +32,13 @@ func init() {
 			return
 		}
 		log.Debugf(ctx, string(bytes))
+		if _, ok := GENTLE[update.Message.Chat.ID]; !ok {
+			GENTLE[update.Message.Chat.ID] = true
+		}
+
 		if strings.Contains(update.Message.Text, "/start") {
 			message := "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз.\nСейчас режим вежливости %s\nЗа подробностями в /help"
-			if GENTLE {
+			if GENTLE[update.Message.Chat.ID] {
 				message = fmt.Sprintf(message, "включен")
 			} else {
 				message = fmt.Sprintf(message, "отключен")
@@ -45,11 +49,11 @@ func init() {
 			sendMessage(w, update.Message.Chat.ID, "Для включения вежливого режима используйте команду /gentle\nДля отключения - /hardcore")
 			return
 		} else if strings.Contains(update.Message.Text, "/hardcore") {
-			GENTLE = false
+			GENTLE[update.Message.Chat.ID] = false
 			sendMessage(w, update.Message.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
 			return
 		} else if strings.Contains(update.Message.Text, "/gentle") {
-			GENTLE = true
+			GENTLE[update.Message.Chat.ID] = true
 			sendMessage(w, update.Message.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
 			return
 		} else {
@@ -61,7 +65,7 @@ func init() {
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
 				log.Infof(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
-				output := huify(update.Message.Text, GENTLE)
+				output := huify(update.Message.Text, GENTLE[update.Message.Chat.ID])
 				if output != "" {
 					sendMessage(w, update.Message.Chat.ID, output)
 					return
