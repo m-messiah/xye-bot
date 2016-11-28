@@ -35,7 +35,6 @@ func init() {
 		if update.Message == nil {
 			return
 		}
-		log.Debugf(ctx, string(bytes))
 		if _, ok := GENTLE[update.Message.Chat.ID]; !ok {
 			GENTLE[update.Message.Chat.ID] = true
 		}
