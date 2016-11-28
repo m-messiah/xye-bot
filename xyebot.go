@@ -57,11 +57,11 @@ func init() {
 		} else if strings.Contains(update.Message.Text, "/delay") {
 			command := strings.Fields(update.Message.Text)
 			if len(command) < 2 {
-				current_delay_message := "Количество сообщений, которое я пропускаю в данный момент: "
+				current_delay_message := "Сейчас я пропускаю случайное число сообщений от 0 до "
 				if current_delay, ok := CUSTOM_DELAY[update.Message.Chat.ID]; ok {
 					current_delay_message += strconv.Itoa(current_delay)
 				} else {
-					current_delay_message += "случайное число от 0 до 4"
+					current_delay_message += "4"
 				}
 				sendMessage(w, update.Message.Chat.ID, current_delay_message)
 				return
@@ -73,7 +73,7 @@ func init() {
 				return
 			}
 			CUSTOM_DELAY[update.Message.Chat.ID] = try_delay
-			sendMessage(w, update.Message.Chat.ID, "Количество сообщений, которые я буду пропускать: "+command_arg)
+			sendMessage(w, update.Message.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+command_arg)
 			return
 		} else if strings.Contains(update.Message.Text, "/hardcore") {
 			GENTLE[update.Message.Chat.ID] = false
@@ -88,7 +88,7 @@ func init() {
 				DELAY[update.Message.Chat.ID] -= 1
 			} else {
 				if custom_delay, ok := CUSTOM_DELAY[update.Message.Chat.ID]; ok {
-					DELAY[update.Message.Chat.ID] = custom_delay
+					DELAY[update.Message.Chat.ID] = rand.Intn(custom_delay)
 				} else {
 					DELAY[update.Message.Chat.ID] = rand.Intn(4)
 				}
