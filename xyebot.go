@@ -53,7 +53,7 @@ func init() {
 				"Вежливый режим:\n"+
 					"  Для включения используйте команду /gentle\n"+
 					"  Для отключения - /hardcore\n"+
-					"Частота ответов: /delay N, где N - любое любое целое положительное число")
+					"Частота ответов: /delay N, где N - любое любое натуральное число")
 			return
 		} else if strings.Contains(update.Message.Text, "/delay") {
 			command := strings.Fields(update.Message.Text)
@@ -69,8 +69,8 @@ func init() {
 			}
 			command_arg := command[len(command)-1]
 			try_delay, err := strconv.Atoi(command_arg)
-			if err != nil || try_delay < 0 {
-				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое целое положительное число")
+			if err != nil || try_delay < 1 {
+				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число")
 				return
 			}
 			CUSTOM_DELAY[update.Message.Chat.ID] = try_delay
@@ -89,7 +89,7 @@ func init() {
 				DELAY[update.Message.Chat.ID] -= 1
 			} else {
 				if custom_delay, ok := CUSTOM_DELAY[update.Message.Chat.ID]; ok {
-					DELAY[update.Message.Chat.ID] = rand.Intn(custom_delay)
+					DELAY[update.Message.Chat.ID] = rand.Intn(custom_delay + 1)
 				} else {
 					DELAY[update.Message.Chat.ID] = rand.Intn(4)
 				}
