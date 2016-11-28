@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,7 @@ func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
 
 func init() {
 	DELAY := make(map[int64]int)
+	CUSTOM_DELAY := make(map[int64]int)
 	GENTLE := make(map[int64]bool)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +48,32 @@ func init() {
 			sendMessage(w, update.Message.Chat.ID, message)
 			return
 		} else if strings.Contains(update.Message.Text, "/help") {
-			sendMessage(w, update.Message.Chat.ID, "Для включения вежливого режима используйте команду /gentle\nДля отключения - /hardcore")
+			sendMessage(w, update.Message.Chat.ID,
+				"Вежливый режим:\n"+
+					"  Для включения используйте команду /gentle\n"+
+					"  Для отключения - /hardcore\n"+
+					"Частота ответов: /delay N, где N - любое любое целое положительное число")
+			return
+		} else if strings.Contains(update.Message.Text, "/delay") {
+			command := strings.Fields(update.Message.Text)
+			if len(command) < 2 {
+				current_delay_message := "Количество сообщений, которое я пропускаю в данный момент: "
+				if current_delay, ok := CUSTOM_DELAY[update.Message.Chat.ID]; ok {
+					current_delay_message += strconv.Itoa(current_delay)
+				} else {
+					current_delay_message += "случайное число от 0 до 4"
+				}
+				sendMessage(w, update.Message.Chat.ID, current_delay_message)
+				return
+			}
+			command_arg := command[len(command)-1]
+			try_delay, err := strconv.Atoi(command_arg)
+			if err != nil || try_delay < 0 {
+				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое целое положительное число")
+				return
+			}
+			CUSTOM_DELAY[update.Message.Chat.ID] = try_delay
+			sendMessage(w, update.Message.Chat.ID, "Количество сообщений, которые я буду пропускать: "+command_arg)
 			return
 		} else if strings.Contains(update.Message.Text, "/hardcore") {
 			GENTLE[update.Message.Chat.ID] = false
@@ -60,7 +87,11 @@ func init() {
 			if _, ok := DELAY[update.Message.Chat.ID]; ok {
 				DELAY[update.Message.Chat.ID] -= 1
 			} else {
-				DELAY[update.Message.Chat.ID] = rand.Intn(4)
+				if custom_delay, ok := CUSTOM_DELAY[update.Message.Chat.ID]; ok {
+					DELAY[update.Message.Chat.ID] = custom_delay
+				} else {
+					DELAY[update.Message.Chat.ID] = rand.Intn(4)
+				}
 			}
 			if DELAY[update.Message.Chat.ID] == 0 {
 				delete(DELAY, update.Message.Chat.ID)
