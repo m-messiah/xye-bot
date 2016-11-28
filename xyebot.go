@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
@@ -23,6 +24,7 @@ func init() {
 	DELAY := make(map[int64]int)
 	CUSTOM_DELAY := make(map[int64]int)
 	GENTLE := make(map[int64]bool)
+	rand.Seed(time.Now().UTC().UnixNano())
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		bytes, _ := ioutil.ReadAll(r.Body)
