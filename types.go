@@ -18,3 +18,11 @@ type Message struct {
 type Update struct {
 	Message *Message `json:"message"`
 }
+
+type DatastoreDelay struct {
+	Delay int
+}
+
+type DatastoreGentle struct {
+	Gentle bool
+}
