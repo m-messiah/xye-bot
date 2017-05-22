@@ -12,6 +12,6 @@ func inStopList(word string) bool {
 }
 
 func xaxaxa(word string) bool {
-	re_ha, _ := regexp.Compile("^[ах]+$")
-	return re_ha.MatchString(word)
+	reHa, _ := regexp.Compile("^[ах]+$")
+	return reHa.MatchString(word)
 }
