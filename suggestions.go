@@ -1,6 +1,6 @@
 package xyebot
 
-var Suggestions = [...]string{
+var suggestions = [...]string{
 	"А быть может, ",
 	"А вернее сказать, ",
 	"А вернее, ",
