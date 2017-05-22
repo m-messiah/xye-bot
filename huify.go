@@ -31,14 +31,21 @@ func _huify(text string) string {
 
 	word := NON_LETTERS.ReplaceAllString(strings.ToLower(words[len(words)-1]), "")
 
+	// Отдельная обработка слова бот
 	if word == "бот" {
 		return "хуебот"
 	}
+	// Пропускаем слова с дефисами, у которых после преобразования ничего, кроме дефисов не осталось
 	if ONLY_DASHES.MatchString(word) {
 		return ""
 	}
 	postfix := PREFIX.ReplaceAllString(word, "")
+	// Пропускаем уже хуифицированные слова
 	if len(postfix) < 6 || word[:4] == "ху" && strings.Index(rules_values, string(postfix[2:4])) >= 0 {
+		return ""
+	}
+	// Пропускаем слова из стоп-листа
+	if inStopList(word) {
 		return ""
 	}
 	if _, ok := rules[postfix[0:2]]; ok {
@@ -54,5 +61,4 @@ func _huify(text string) string {
 	} else {
 		return "ху" + postfix
 	}
-
 }
