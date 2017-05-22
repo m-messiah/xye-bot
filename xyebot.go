@@ -21,6 +21,18 @@ func sendMessage(w http.ResponseWriter, chat_id int64, text string) {
 	json.NewEncoder(w).Encode(msg)
 }
 
+func isCommand(text, command string) bool {
+	if strings.Contains(text, command) {
+		if !strings.Contains(text, "@") {
+			return true
+		}
+		if strings.Contains(text, "@xye_bot") {
+			return true
+		}
+	}
+	return false
+}
+
 func init() {
 	DELAY := make(map[int64]int)
 	GENTLE := make(map[int64]bool)
@@ -52,7 +64,7 @@ func init() {
 
 		}
 
-		if strings.Contains(update.Message.Text, "/start") {
+		if isCommand(update.Message.Text, "/start") {
 			message := "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз.\nСейчас режим вежливости %s\nЗа подробностями в /help"
 			if GENTLE[update.Message.Chat.ID] {
 				message = fmt.Sprintf(message, "включен")
@@ -61,14 +73,14 @@ func init() {
 			}
 			sendMessage(w, update.Message.Chat.ID, message)
 			return
-		} else if strings.Contains(update.Message.Text, "/help") {
+		} else if isCommand(update.Message.Text, "/help") {
 			sendMessage(w, update.Message.Chat.ID,
 				"Вежливый режим:\n"+
 					"  Для включения используйте команду /gentle\n"+
 					"  Для отключения - /hardcore\n"+
 					"Частота ответов: /delay N, где N - любое любое натуральное число")
 			return
-		} else if strings.Contains(update.Message.Text, "/delay") {
+		} else if isCommand(update.Message.Text, "/delay") {
 			command := strings.Fields(update.Message.Text)
 			if len(command) < 2 {
 				current_delay_message := "Сейчас я пропускаю случайное число сообщений от 0 до "
@@ -95,7 +107,7 @@ func init() {
 			CUSTOM_DELAY[update.Message.Chat.ID] = custom_delay.Delay
 			sendMessage(w, update.Message.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+command_arg)
 			return
-		} else if strings.Contains(update.Message.Text, "/hardcore") {
+		} else if isCommand(update.Message.Text, "/hardcore") {
 			GENTLE[update.Message.Chat.ID] = false
 			gentle_struct.Gentle = false
 			if _, err := datastore.Put(ctx, gentle_key, &gentle_struct); err != nil {
@@ -103,7 +115,7 @@ func init() {
 			}
 			sendMessage(w, update.Message.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
 			return
-		} else if strings.Contains(update.Message.Text, "/gentle") {
+		} else if isCommand(update.Message.Text, "/gentle") {
 			GENTLE[update.Message.Chat.ID] = true
 			gentle_struct.Gentle = true
 			if _, err := datastore.Put(ctx, gentle_key, &gentle_struct); err != nil {
