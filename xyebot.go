@@ -94,14 +94,14 @@ func init() {
 			}
 			commandArg := command[len(command)-1]
 			tryDelay, err := strconv.Atoi(commandArg)
-			if err != nil || tryDelay < 1 {
-				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число")
+			if err != nil || tryDelay < 1 || tryDelay > 1000000 {
+				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000")
 				return
 			}
 			customDelay.Delay = tryDelay
 			if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
 				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
-				sendMessage(w, update.Message.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число")
+				sendMessage(w, update.Message.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000")
 				return
 			}
 			CustomDelay[update.Message.Chat.ID] = customDelay.Delay
