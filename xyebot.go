@@ -33,6 +33,7 @@ func isCommand(text, command string) bool {
 func init() {
 	Delay := make(map[int64]int)
 	Gentle := make(map[int64]bool)
+	Stopped := make(map[int64]bool)
 	CustomDelay := make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
 
@@ -40,7 +41,8 @@ func init() {
 		bytes, _ := ioutil.ReadAll(r.Body)
 		ctx := appengine.NewContext(r)
 		var customDelay DatastoreDelay
-		var gentleStruct DatastoreGentle
+		var gentleStruct DatastoreBool
+		var stoppedStruct DatastoreBool
 		var update Update
 		json.Unmarshal(bytes, &update)
 		if update.Message == nil {
@@ -51,18 +53,36 @@ func init() {
 		if _, ok := Gentle[update.Message.Chat.ID]; !ok {
 			if err := datastore.Get(ctx, gentleKey, &gentleStruct); err != nil {
 				Gentle[update.Message.Chat.ID] = true
-				gentleStruct.Gentle = true
+				gentleStruct.Value = true
 				if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
 					log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
 				}
 			} else {
-				Gentle[update.Message.Chat.ID] = gentleStruct.Gentle
+				Gentle[update.Message.Chat.ID] = gentleStruct.Value
+			}
+		}
+
+		stoppedKey := datastore.NewKey(ctx, "Stopped", "", update.Message.Chat.ID, nil)
+		if _, ok := Stopped[update.Message.Chat.ID]; !ok {
+			if err := datastore.Get(ctx, stoppedKey, &stoppedStruct); err != nil {
+				Stopped[update.Message.Chat.ID] = false
+				stoppedStruct.Value = false
+				if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
+					log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+				}
+			} else {
+				Stopped[update.Message.Chat.ID] = stoppedStruct.Value
 			}
 
 		}
 
 		if isCommand(update.Message.Text, "/start") {
 			message := "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз.\nСейчас режим вежливости %s\nЗа подробностями в /help"
+			Stopped[update.Message.Chat.ID] = false
+			stoppedStruct.Value = false
+			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
+				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+			}
 			if Gentle[update.Message.Chat.ID] {
 				message = fmt.Sprintf(message, "включен")
 			} else {
@@ -72,12 +92,23 @@ func init() {
 			return
 		}
 
+		if isCommand(update.Message.Text, "/stop") {
+			Stopped[update.Message.Chat.ID] = true
+			stoppedStruct.Value = true
+			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
+				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+			}
+			sendMessage(w, update.Message.Chat.ID, "Выключаюсь")
+			return
+		}
+
 		if isCommand(update.Message.Text, "/help") {
 			sendMessage(w, update.Message.Chat.ID,
 				"Вежливый режим:\n"+
 					"  Для включения используйте команду /gentle\n"+
 					"  Для отключения - /hardcore\n"+
-					"Частота ответов: /delay N, где N - любое любое натуральное число")
+					"Частота ответов: /delay N, где N - любое любое натуральное число\n"+
+					"Для остановки используйте /stop")
 			return
 		}
 		if isCommand(update.Message.Text, "/delay") {
@@ -110,7 +141,7 @@ func init() {
 		}
 		if isCommand(update.Message.Text, "/hardcore") {
 			Gentle[update.Message.Chat.ID] = false
-			gentleStruct.Gentle = false
+			gentleStruct.Value = false
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
 			}
@@ -119,11 +150,15 @@ func init() {
 		}
 		if isCommand(update.Message.Text, "/gentle") {
 			Gentle[update.Message.Chat.ID] = true
-			gentleStruct.Gentle = true
+			gentleStruct.Value = true
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
 			}
 			sendMessage(w, update.Message.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
+			return
+		}
+
+		if Stopped[update.Message.Chat.ID] {
 			return
 		}
 
