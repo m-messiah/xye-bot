@@ -28,7 +28,7 @@ type DatastoreDelay struct {
 	Delay int
 }
 
-// DatastoreGentle type for DataStore
-type DatastoreGentle struct {
-	Gentle bool
+// DatastoreBool type for DataStore
+type DatastoreBool struct {
+	Value bool
 }
