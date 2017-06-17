@@ -2,4 +2,10 @@ sudo: false
 language: go
 go:
   - tip
-
+before_install:
+  - openssl aes-256-cbc -K $encrypted_e43729c6d3d1_key -iv $encrypted_e43729c6d3d1_iv -in client_secret.json.enc -out client_secret.json -d
+deploy:
+  provider: gae
+  version: go
+  keyfile: client_secret.json
+  project: xye-bot
