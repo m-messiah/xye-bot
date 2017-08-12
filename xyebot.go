@@ -45,65 +45,69 @@ func init() {
 		var stoppedStruct DatastoreBool
 		var update Update
 		json.Unmarshal(bytes, &update)
-		if update.Message == nil {
-			return
+		updateMessage := update.Message
+		if updateMessage == nil {
+			if update.EditedMessage == nil {
+				return
+			}
+			updateMessage = update.EditedMessage
 		}
-		customDelayKey := datastore.NewKey(ctx, "DatastoreDelay", "", update.Message.Chat.ID, nil)
-		gentleKey := datastore.NewKey(ctx, "Gentle", "", update.Message.Chat.ID, nil)
-		if _, ok := Gentle[update.Message.Chat.ID]; !ok {
+		customDelayKey := datastore.NewKey(ctx, "DatastoreDelay", "", updateMessage.Chat.ID, nil)
+		gentleKey := datastore.NewKey(ctx, "Gentle", "", updateMessage.Chat.ID, nil)
+		if _, ok := Gentle[updateMessage.Chat.ID]; !ok {
 			if err := datastore.Get(ctx, gentleKey, &gentleStruct); err != nil {
-				Gentle[update.Message.Chat.ID] = true
+				Gentle[updateMessage.Chat.ID] = true
 				gentleStruct.Value = true
 				if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
-					log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+					log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 				}
 			} else {
-				Gentle[update.Message.Chat.ID] = gentleStruct.Value
+				Gentle[updateMessage.Chat.ID] = gentleStruct.Value
 			}
 		}
 
-		stoppedKey := datastore.NewKey(ctx, "Stopped", "", update.Message.Chat.ID, nil)
-		if _, ok := Stopped[update.Message.Chat.ID]; !ok {
+		stoppedKey := datastore.NewKey(ctx, "Stopped", "", updateMessage.Chat.ID, nil)
+		if _, ok := Stopped[updateMessage.Chat.ID]; !ok {
 			if err := datastore.Get(ctx, stoppedKey, &stoppedStruct); err != nil {
-				Stopped[update.Message.Chat.ID] = false
+				Stopped[updateMessage.Chat.ID] = false
 				stoppedStruct.Value = false
 				if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
-					log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+					log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 				}
 			} else {
-				Stopped[update.Message.Chat.ID] = stoppedStruct.Value
+				Stopped[updateMessage.Chat.ID] = stoppedStruct.Value
 			}
 
 		}
 
-		if isCommand(update.Message.Text, "/start") {
+		if isCommand(updateMessage.Text, "/start") {
 			message := "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз.\nСейчас режим вежливости %s\nЗа подробностями в /help"
-			Stopped[update.Message.Chat.ID] = false
+			Stopped[updateMessage.Chat.ID] = false
 			stoppedStruct.Value = false
 			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
-				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			if Gentle[update.Message.Chat.ID] {
+			if Gentle[updateMessage.Chat.ID] {
 				message = fmt.Sprintf(message, "включен")
 			} else {
 				message = fmt.Sprintf(message, "отключен")
 			}
-			sendMessage(w, update.Message.Chat.ID, message)
+			sendMessage(w, updateMessage.Chat.ID, message)
 			return
 		}
 
-		if isCommand(update.Message.Text, "/stop") {
-			Stopped[update.Message.Chat.ID] = true
+		if isCommand(updateMessage.Text, "/stop") {
+			Stopped[updateMessage.Chat.ID] = true
 			stoppedStruct.Value = true
 			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
-				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, update.Message.Chat.ID, "Выключаюсь")
+			sendMessage(w, updateMessage.Chat.ID, "Выключаюсь")
 			return
 		}
 
-		if isCommand(update.Message.Text, "/help") {
-			sendMessage(w, update.Message.Chat.ID,
+		if isCommand(updateMessage.Text, "/help") {
+			sendMessage(w, updateMessage.Chat.ID,
 				"Вежливый режим:\n"+
 					"  Для включения используйте команду /gentle\n"+
 					"  Для отключения - /hardcore\n"+
@@ -111,81 +115,81 @@ func init() {
 					"Для остановки используйте /stop")
 			return
 		}
-		if isCommand(update.Message.Text, "/delay") {
-			command := strings.Fields(update.Message.Text)
+		if isCommand(updateMessage.Text, "/delay") {
+			command := strings.Fields(updateMessage.Text)
 			if len(command) < 2 {
 				currentDelayMessage := "Сейчас я пропускаю случайное число сообщений от 0 до "
-				if currentDelay, ok := CustomDelay[update.Message.Chat.ID]; ok {
+				if currentDelay, ok := CustomDelay[updateMessage.Chat.ID]; ok {
 					currentDelayMessage += strconv.Itoa(currentDelay)
 				} else {
 					currentDelayMessage += "4"
 				}
-				sendMessage(w, update.Message.Chat.ID, currentDelayMessage)
+				sendMessage(w, updateMessage.Chat.ID, currentDelayMessage)
 				return
 			}
 			commandArg := command[len(command)-1]
 			tryDelay, err := strconv.Atoi(commandArg)
 			if err != nil || tryDelay < 1 || tryDelay > 1000000 {
-				sendMessage(w, update.Message.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000")
+				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000")
 				return
 			}
 			customDelay.Delay = tryDelay
 			if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
-				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
-				sendMessage(w, update.Message.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000")
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
+				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000")
 				return
 			}
-			CustomDelay[update.Message.Chat.ID] = customDelay.Delay
-			sendMessage(w, update.Message.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg)
+			CustomDelay[updateMessage.Chat.ID] = customDelay.Delay
+			sendMessage(w, updateMessage.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg)
 			return
 		}
-		if isCommand(update.Message.Text, "/hardcore") {
-			Gentle[update.Message.Chat.ID] = false
+		if isCommand(updateMessage.Text, "/hardcore") {
+			Gentle[updateMessage.Chat.ID] = false
 			gentleStruct.Value = false
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
-				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, update.Message.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
+			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
 			return
 		}
-		if isCommand(update.Message.Text, "/gentle") {
-			Gentle[update.Message.Chat.ID] = true
+		if isCommand(updateMessage.Text, "/gentle") {
+			Gentle[updateMessage.Chat.ID] = true
 			gentleStruct.Value = true
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
-				log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, update.Message.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
+			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
 			return
 		}
 
-		if Stopped[update.Message.Chat.ID] {
+		if Stopped[updateMessage.Chat.ID] {
 			return
 		}
 
-		if _, ok := Delay[update.Message.Chat.ID]; ok {
-			Delay[update.Message.Chat.ID]--
+		if _, ok := Delay[updateMessage.Chat.ID]; ok {
+			Delay[updateMessage.Chat.ID]--
 		} else {
-			if currentDelay, ok := CustomDelay[update.Message.Chat.ID]; ok {
-				Delay[update.Message.Chat.ID] = rand.Intn(currentDelay + 1)
+			if currentDelay, ok := CustomDelay[updateMessage.Chat.ID]; ok {
+				Delay[updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 			} else {
 				if err := datastore.Get(ctx, customDelayKey, &customDelay); err != nil {
 					customDelay.Delay = 4
-					CustomDelay[update.Message.Chat.ID] = 4
+					CustomDelay[updateMessage.Chat.ID] = 4
 					if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
-						log.Warningf(ctx, "[%v] %s", update.Message.Chat.ID, err.Error())
+						log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 					}
 				} else {
-					CustomDelay[update.Message.Chat.ID] = customDelay.Delay
-					Delay[update.Message.Chat.ID] = rand.Intn(customDelay.Delay + 1)
+					CustomDelay[updateMessage.Chat.ID] = customDelay.Delay
+					Delay[updateMessage.Chat.ID] = rand.Intn(customDelay.Delay + 1)
 				}
 			}
 		}
-		if Delay[update.Message.Chat.ID] == 0 {
-			delete(Delay, update.Message.Chat.ID)
-			// log.Infof(ctx, "[%v] %s", update.Message.Chat.ID, update.Message.Text)
-			output := huify(update.Message.Text, Gentle[update.Message.Chat.ID])
+		if Delay[updateMessage.Chat.ID] == 0 {
+			delete(Delay, updateMessage.Chat.ID)
+			// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
+			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID])
 			if output != "" {
-				sendMessage(w, update.Message.Chat.ID, output)
+				sendMessage(w, updateMessage.Chat.ID, output)
 				return
 			}
 		}

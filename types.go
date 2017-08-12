@@ -20,7 +20,8 @@ type Message struct {
 
 // Update - outer Telegram structure
 type Update struct {
-	Message *Message `json:"message"`
+	Message       *Message `json:"message"`
+	EditedMessage *Message `json:"edited_message"`
 }
 
 // DatastoreDelay type for DataStore
