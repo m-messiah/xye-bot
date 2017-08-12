@@ -9,7 +9,7 @@ type Response struct {
 
 // Chat Telegram structure
 type Chat struct {
-	ID int64 `json: "id"`
+	ID int64 `json:"id"`
 }
 
 // Message Telegram structure
