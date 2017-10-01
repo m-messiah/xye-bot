@@ -33,3 +33,8 @@ type DatastoreDelay struct {
 type DatastoreBool struct {
 	Value bool
 }
+
+// DatastoreInt type for DataStore
+type DatastoreInt struct {
+	Value int
+}
