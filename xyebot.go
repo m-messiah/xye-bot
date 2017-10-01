@@ -174,7 +174,7 @@ func init() {
 				Delay[updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 			} else {
 				if err := datastore.Get(ctx, customDelayKey, &customDelay); err != nil {
-					log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
+					log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 					customDelay.Delay = 4
 					CustomDelay[updateMessage.Chat.ID] = 4
 					if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
