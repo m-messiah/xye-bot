@@ -33,6 +33,7 @@ func isCommand(text, command string) bool {
 func init() {
 	Delay := make(map[int64]int)
 	Gentle := make(map[int64]bool)
+	WordsAmount := make(map[int64]int)
 	Stopped := make(map[int64]bool)
 	CustomDelay := make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -42,6 +43,7 @@ func init() {
 		ctx := appengine.NewContext(r)
 		var customDelay DatastoreDelay
 		var gentleStruct DatastoreBool
+		var wordsAmountStruct DatastoreInt
 		var stoppedStruct DatastoreBool
 		var update Update
 		json.Unmarshal(bytes, &update)
@@ -77,11 +79,26 @@ func init() {
 			} else {
 				Stopped[updateMessage.Chat.ID] = stoppedStruct.Value
 			}
+		}
 
+		wordsAmountKey := datastore.NewKey(ctx, "WordsAmount", "", updateMessage.Chat.ID, nil)
+		if _, ok := WordsAmount[updateMessage.Chat.ID]; !ok {
+			if err := datastore.Get(ctx, wordsAmountKey, &wordsAmountStruct); err != nil {
+				wordsAmountStruct.Value = 1
+				WordsAmount[updateMessage.Chat.ID] = wordsAmountStruct.Value
+				if _, err := datastore.Put(ctx, wordsAmountKey, &wordsAmountStruct); err != nil {
+					log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
+				}
+			} else {
+				WordsAmount[updateMessage.Chat.ID] = wordsAmountStruct.Value
+			}
 		}
 
 		if isCommand(updateMessage.Text, "/start") {
-			message := "Привет! Я бот-хуебот.\nЯ буду хуифицировать некоторые из Ваших фраз.\nСейчас режим вежливости %s\nЗа подробностями в /help"
+			message := "Привет! Я бот-хуебот.\n" +
+				"Я буду хуифицировать некоторые из Ваших фраз.\n" +
+				"Сейчас режим вежливости %s\n" +
+				"За подробностями в /help"
 			Stopped[updateMessage.Chat.ID] = false
 			stoppedStruct.Value = false
 			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
@@ -112,6 +129,7 @@ func init() {
 					"  Для включения используйте команду /gentle\n"+
 					"  Для отключения - /hardcore\n"+
 					"Частота ответов: /delay N, где N - любое любое натуральное число\n"+
+					"Число хуифицируемых слов: /amount N, где N - от 1 до 10\n"+
 					"Для остановки используйте /stop")
 			return
 		}
@@ -162,6 +180,35 @@ func init() {
 			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
 			return
 		}
+		if isCommand(updateMessage.Text, "/amount") {
+			suffixes := [3]string{"последнее слово", "последних слова", "последних слов"}
+			command := strings.Fields(updateMessage.Text)
+			if len(command) < 2 {
+				currentWordsAmount := 1
+				if currentAmount, ok := WordsAmount[updateMessage.Chat.ID]; ok {
+					currentWordsAmount = currentAmount
+				}
+				message := humanNumeral("Сейчас я хуифицирую %s", currentWordsAmount, suffixes)
+				sendMessage(w, updateMessage.Chat.ID, message)
+				return
+			}
+			commandArg := command[len(command)-1]
+			tryWordsAmount, err := strconv.Atoi(commandArg)
+			if err != nil || tryWordsAmount < 1 || tryWordsAmount > 10 {
+				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/amount N`, где N любое натуральное число не больше 10")
+				return
+			}
+			wordsAmountStruct.Value = tryWordsAmount
+			if _, err := datastore.Put(ctx, wordsAmountKey, &wordsAmountStruct); err != nil {
+				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
+				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/amount N`, где N любое натуральное число не больше 10")
+				return
+			}
+			WordsAmount[updateMessage.Chat.ID] = wordsAmountStruct.Value
+			message := humanNumeral("Я буду хуифицировать %s", wordsAmountStruct.Value, suffixes)
+			sendMessage(w, updateMessage.Chat.ID, message)
+			return
+		}
 
 		if Stopped[updateMessage.Chat.ID] {
 			return
@@ -189,7 +236,7 @@ func init() {
 		if Delay[updateMessage.Chat.ID] == 0 {
 			delete(Delay, updateMessage.Chat.ID)
 			// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
-			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID])
+			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID], WordsAmount[updateMessage.Chat.ID])
 			if output != "" {
 				sendMessage(w, updateMessage.Chat.ID, output)
 				return

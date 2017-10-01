@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func huify(text string, gentle bool) string {
-	huified := _huify(text)
+func huify(text string, gentle bool, amount int) string {
+	huified := _huify(text, amount)
 	if huified == "" {
 		return ""
 	}
@@ -17,19 +17,36 @@ func huify(text string, gentle bool) string {
 	return huified
 }
 
-func _huify(text string) string {
+func _huify(text string, amount int) string {
+	words := strings.Fields(text)
+	// if len(words) > 3 || len(words) < 1 {
+	if len(words) < 1 || len(words)-amount > 4 {
+		return ""
+	}
+	var answer []string
+	candidate_words := words
+	if len(words) > amount {
+		candidate_words = words[len(words)-amount:]
+	}
+	for _, word := range candidate_words {
+		output := _huify_word(word)
+		if len(output) > 0 {
+			answer = append(answer, output)
+		}
+	}
+	return strings.Join(answer, " ")
+
+}
+
+func _huify_word(text string) string {
 	const vowels string = "оеаяуюы"
 	const rulesValues string = "еяюи"
 	rules := map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
 	nonLetters, _ := regexp.Compile("[^а-яё-]+")
 	onlyDashes, _ := regexp.Compile("^-*$")
 	PREFIX, _ := regexp.Compile("^[бвгджзйклмнпрстфхцчшщьъ]+")
-	words := strings.Fields(text)
-	if len(words) > 3 || len(words) < 1 {
-		return ""
-	}
 
-	word := nonLetters.ReplaceAllString(strings.ToLower(words[len(words)-1]), "")
+	word := nonLetters.ReplaceAllString(strings.ToLower(text), "")
 
 	// Отдельная обработка слова бот
 	if word == "бот" {
