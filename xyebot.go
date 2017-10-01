@@ -141,6 +141,7 @@ func init() {
 			}
 			CustomDelay[updateMessage.Chat.ID] = customDelay.Delay
 			sendMessage(w, updateMessage.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg)
+			delete(Delay, updateMessage.Chat.ID)
 			return
 		}
 		if isCommand(updateMessage.Text, "/hardcore") {
@@ -173,6 +174,7 @@ func init() {
 				Delay[updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 			} else {
 				if err := datastore.Get(ctx, customDelayKey, &customDelay); err != nil {
+					log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 					customDelay.Delay = 4
 					CustomDelay[updateMessage.Chat.ID] = 4
 					if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
