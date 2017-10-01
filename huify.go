@@ -28,17 +28,22 @@ func _huify(text string, amount int) string {
 	if len(words) > amount {
 		candidate_words = words[len(words)-amount:]
 	}
+	isHuified := false
 	for _, word := range candidate_words {
-		output := _huify_word(word)
+		output, ok := _huify_word(word)
 		if len(output) > 0 {
 			answer = append(answer, output)
 		}
+		isHuified = isHuified || ok
 	}
-	return strings.Join(answer, " ")
-
+	if isHuified {
+		return strings.Join(answer, " ")
+	} else {
+		return ""
+	}
 }
 
-func _huify_word(text string) string {
+func _huify_word(text string) (string, bool) {
 	const vowels string = "оеаяуюы"
 	const rulesValues string = "еяюи"
 	rules := map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
@@ -50,29 +55,29 @@ func _huify_word(text string) string {
 
 	// Отдельная обработка слова бот
 	if word == "бот" {
-		return "хуебот"
+		return "хуебот", true
 	}
 	// Пропускаем слова с дефисами, у которых после преобразования ничего, кроме дефисов не осталось
 	if onlyDashes.MatchString(word) {
-		return ""
+		return word, false
 	}
 	postfix := PREFIX.ReplaceAllString(word, "")
 	// Пропускаем уже хуифицированные слова
 	if len(postfix) < 6 || word[:4] == "ху" && strings.Index(rulesValues, string(postfix[2:4])) >= 0 {
-		return ""
+		return word, false
 	}
 	// Пропускаем слова из стоп-листа
 	if inStopList(word) {
-		return ""
+		return word, false
 	}
 	if _, ok := rules[postfix[0:2]]; ok {
 		if strings.Index(vowels, postfix[2:4]) < 0 {
-			return "ху" + rules[postfix[0:2]] + postfix[2:]
+			return "ху" + rules[postfix[0:2]] + postfix[2:], true
 		}
 		if huified, ok := rules[postfix[2:4]]; ok {
-			return "ху" + huified + postfix[4:]
+			return "ху" + huified + postfix[4:], true
 		}
-		return "ху" + postfix[2:]
+		return "ху" + postfix[2:], true
 	}
-	return "ху" + postfix
+	return "ху" + postfix, true
 }
