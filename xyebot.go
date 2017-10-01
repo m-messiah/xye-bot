@@ -181,15 +181,13 @@ func init() {
 			return
 		}
 		if isCommand(updateMessage.Text, "/amount") {
-			suffixes := [3]string{"последнее слово", "последних слова", "последних слов"}
 			command := strings.Fields(updateMessage.Text)
 			if len(command) < 2 {
 				currentWordsAmount := 1
 				if currentAmount, ok := WordsAmount[updateMessage.Chat.ID]; ok {
 					currentWordsAmount = currentAmount
 				}
-				message := humanNumeral("Сейчас я хуифицирую %s", currentWordsAmount, suffixes)
-				sendMessage(w, updateMessage.Chat.ID, message)
+				sendMessage(w, updateMessage.Chat.ID, "Сейчас я хуифицирую случайное число слов от 1 до "+strconv.Itoa(currentWordsAmount))
 				return
 			}
 			commandArg := command[len(command)-1]
@@ -205,8 +203,7 @@ func init() {
 				return
 			}
 			WordsAmount[updateMessage.Chat.ID] = wordsAmountStruct.Value
-			message := humanNumeral("Я буду хуифицировать %s", wordsAmountStruct.Value, suffixes)
-			sendMessage(w, updateMessage.Chat.ID, message)
+			sendMessage(w, updateMessage.Chat.ID, "Я буду хуифицировать случайное число слов от 1 до "+strconv.Itoa(wordsAmountStruct.Value))
 			return
 		}
 
@@ -236,7 +233,7 @@ func init() {
 		if Delay[updateMessage.Chat.ID] == 0 {
 			delete(Delay, updateMessage.Chat.ID)
 			// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
-			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID], WordsAmount[updateMessage.Chat.ID])
+			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID], rand.Intn(WordsAmount[updateMessage.Chat.ID])+1)
 			if output != "" {
 				sendMessage(w, updateMessage.Chat.ID, output)
 				return

@@ -63,6 +63,7 @@ func (s *TestSuite) TestHuified(c *C) {
 
 func (s *TestSuite) TestSeveralWords(c *C) {
 	c.Check(_huify("привет", 5), Equals, "хуивет")
+	c.Check(_huify("привет бот", 0), Equals, "")
 	c.Check(_huify("привет бот", 1), Equals, "хуебот")
 	c.Check(_huify("доброе утро", 1), Equals, "хуютро")
 	c.Check(_huify("ты пьяный", 1), Equals, "хуяный")
@@ -76,6 +77,7 @@ func (s *TestSuite) TestSeveralWords(c *C) {
 	c.Check(_huify("Мороз и солнце - день чудесный", 5), Equals, "и хуелнце - хуень хуюдесный")
 	c.Check(_huify("Мороз и солнце - день чудесный", 6), Equals, "хуероз и хуелнце - хуень хуюдесный")
 	c.Check(_huify("Выйду ночью в поле с конем", 10), Equals, "хуийду хуечью в хуеле с хуенем")
+	c.Check(_huify("Выйду ночью в поле с конем", 1), Equals, "")
 	c.Check(_huify("Было или не было, прошло или нет", 10), Equals, "хуило хуили не хуило хуешло хуили нет")
 	c.Check(_huify("А не спеть ли мне песню?", 10), Equals, "а не хуеть ли мне хуесню")
 	c.Check(_huify("А не и да", 10), Equals, "")
