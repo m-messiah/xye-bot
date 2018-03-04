@@ -14,11 +14,27 @@ import (
 	"time"
 )
 
-func sendMessage(w http.ResponseWriter, chatID int64, text string) {
-	msg := Response{Chatid: chatID, Text: text, Method: "sendMessage"}
+func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
+	var msg Response
+	if replyToID == nil {
+		msg = Response{Chatid: chatID, Text: text, Method: "sendMessage"}
+	} else {
+		msg = Response{Chatid: chatID, Text: text, ReplyToID: replyToID, Method: "sendMessage"}
+	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(msg)
+}
+
+func getReplyIDIfNeeded(updateMessage *Message) *int64 {
+	if updateMessage.ReplyTo != nil {
+		if updateMessage.ReplyTo.From.Username != nil {
+			if strings.Compare(*updateMessage.ReplyTo.From.Username, "xye_bot") == 0 {
+				return &updateMessage.ID
+			}
+		}
+	}
+	return nil
 }
 
 func isCommand(text, command string) bool {
@@ -109,7 +125,7 @@ func init() {
 			} else {
 				message = fmt.Sprintf(message, "отключен")
 			}
-			sendMessage(w, updateMessage.Chat.ID, message)
+			sendMessage(w, updateMessage.Chat.ID, message, nil)
 			return
 		}
 
@@ -119,7 +135,7 @@ func init() {
 			if _, err := datastore.Put(ctx, stoppedKey, &stoppedStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, updateMessage.Chat.ID, "Выключаюсь")
+			sendMessage(w, updateMessage.Chat.ID, "Выключаюсь", nil)
 			return
 		}
 
@@ -130,7 +146,7 @@ func init() {
 					"  Для отключения - /hardcore\n"+
 					"Частота ответов: /delay N, где N - любое любое натуральное число\n"+
 					"Число хуифицируемых слов: /amount N, где N - от 1 до 10\n"+
-					"Для остановки используйте /stop")
+					"Для остановки используйте /stop", nil)
 			return
 		}
 		if isCommand(updateMessage.Text, "/delay") {
@@ -142,23 +158,23 @@ func init() {
 				} else {
 					currentDelayMessage += "4"
 				}
-				sendMessage(w, updateMessage.Chat.ID, currentDelayMessage)
+				sendMessage(w, updateMessage.Chat.ID, currentDelayMessage, nil)
 				return
 			}
 			commandArg := command[len(command)-1]
 			tryDelay, err := strconv.Atoi(commandArg)
 			if err != nil || tryDelay < 1 || tryDelay > 1000000 {
-				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000")
+				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000", nil)
 				return
 			}
 			customDelay.Delay = tryDelay
 			if _, err := datastore.Put(ctx, customDelayKey, &customDelay); err != nil {
 				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
-				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000")
+				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000", nil)
 				return
 			}
 			CustomDelay[updateMessage.Chat.ID] = customDelay.Delay
-			sendMessage(w, updateMessage.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg)
+			sendMessage(w, updateMessage.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg, nil)
 			delete(Delay, updateMessage.Chat.ID)
 			return
 		}
@@ -168,7 +184,7 @@ func init() {
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
+			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle", nil)
 			return
 		}
 		if isCommand(updateMessage.Text, "/gentle") {
@@ -177,7 +193,7 @@ func init() {
 			if _, err := datastore.Put(ctx, gentleKey, &gentleStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
 			}
-			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
+			sendMessage(w, updateMessage.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore", nil)
 			return
 		}
 		if isCommand(updateMessage.Text, "/amount") {
@@ -187,23 +203,23 @@ func init() {
 				if currentAmount, ok := WordsAmount[updateMessage.Chat.ID]; ok {
 					currentWordsAmount = currentAmount
 				}
-				sendMessage(w, updateMessage.Chat.ID, "Сейчас я хуифицирую случайное число слов от 1 до "+strconv.Itoa(currentWordsAmount))
+				sendMessage(w, updateMessage.Chat.ID, "Сейчас я хуифицирую случайное число слов от 1 до "+strconv.Itoa(currentWordsAmount), nil)
 				return
 			}
 			commandArg := command[len(command)-1]
 			tryWordsAmount, err := strconv.Atoi(commandArg)
 			if err != nil || tryWordsAmount < 1 || tryWordsAmount > 10 {
-				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/amount N`, где N любое натуральное число не больше 10")
+				sendMessage(w, updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/amount N`, где N любое натуральное число не больше 10", nil)
 				return
 			}
 			wordsAmountStruct.Value = tryWordsAmount
 			if _, err := datastore.Put(ctx, wordsAmountKey, &wordsAmountStruct); err != nil {
 				log.Warningf(ctx, "[%v] %s", updateMessage.Chat.ID, err.Error())
-				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/amount N`, где N любое натуральное число не больше 10")
+				sendMessage(w, updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/amount N`, где N любое натуральное число не больше 10", nil)
 				return
 			}
 			WordsAmount[updateMessage.Chat.ID] = wordsAmountStruct.Value
-			sendMessage(w, updateMessage.Chat.ID, "Я буду хуифицировать случайное число слов от 1 до "+strconv.Itoa(wordsAmountStruct.Value))
+			sendMessage(w, updateMessage.Chat.ID, "Я буду хуифицировать случайное число слов от 1 до "+strconv.Itoa(wordsAmountStruct.Value), nil)
 			return
 		}
 
@@ -230,12 +246,15 @@ func init() {
 				}
 			}
 		}
-		if Delay[updateMessage.Chat.ID] == 0 {
-			delete(Delay, updateMessage.Chat.ID)
+		replyID := getReplyIDIfNeeded(updateMessage)
+		if Delay[updateMessage.Chat.ID] == 0 || replyID != nil {
+			if replyID == nil {
+				delete(Delay, updateMessage.Chat.ID)
+			}
 			// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
 			output := huify(updateMessage.Text, Gentle[updateMessage.Chat.ID], rand.Intn(WordsAmount[updateMessage.Chat.ID])+1)
 			if output != "" {
-				sendMessage(w, updateMessage.Chat.ID, output)
+				sendMessage(w, updateMessage.Chat.ID, output, replyID)
 				return
 			}
 		}
