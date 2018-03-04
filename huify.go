@@ -19,7 +19,6 @@ func huify(text string, gentle bool, amount int) string {
 
 func _huify(text string, amount int) string {
 	words := strings.Fields(text)
-	// if len(words) > 3 || len(words) < 1 {
 	if len(words) < 1 || len(words)-amount > 4 {
 		return ""
 	}
