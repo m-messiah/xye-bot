@@ -12,7 +12,7 @@ type CommandStart Command
 
 func (self *CommandStart) Handle() error {
 	message := "Привет! Я бот-хуебот.\n" +
-		"Я буду хуифицировать некоторые из Ваших фраз.\n" +
+		"Я буду хуифицировать некоторые из ваших фраз.\n" +
 		"Сейчас режим вежливости %s\n" +
 		"За подробностями в /help"
 	switchDatastoreBool(self.request, "Stopped", false)
