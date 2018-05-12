@@ -3,6 +3,7 @@ package xyebot
 import (
 	"context"
 	gae_ds "google.golang.org/appengine/datastore"
+	"net/http"
 )
 
 // Response to Telegram
@@ -60,4 +61,17 @@ type Request struct {
 	gentleKey         *gae_ds.Key
 	stoppedKey        *gae_ds.Key
 	wordsAmountKey    *gae_ds.Key
+	writer            http.ResponseWriter
+}
+
+type Command struct {
+	request *Request
+}
+
+type CommandIF interface {
+	Handle() error
+}
+
+func handleCommand(command CommandIF) error {
+	return command.Handle()
 }
