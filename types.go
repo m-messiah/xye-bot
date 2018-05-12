@@ -1,5 +1,10 @@
 package xyebot
 
+import (
+	"context"
+	gae_ds "google.golang.org/appengine/datastore"
+)
+
 // Response to Telegram
 type Response struct {
 	Chatid    int64  `json:"chat_id"`
@@ -42,4 +47,17 @@ type DatastoreBool struct {
 // DatastoreInt type for DataStore
 type DatastoreInt struct {
 	Value int
+}
+
+type Request struct {
+	customDelay       DatastoreDelay
+	gentleStruct      DatastoreBool
+	wordsAmountStruct DatastoreInt
+	stoppedStruct     DatastoreBool
+	updateMessage     *Message
+	ctx               context.Context
+	customDelayKey    *gae_ds.Key
+	gentleKey         *gae_ds.Key
+	stoppedKey        *gae_ds.Key
+	wordsAmountKey    *gae_ds.Key
 }
