@@ -3,20 +3,16 @@ package xyebot
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
-func NewRequest(r *http.Request) (*Request, error) {
-	self := &Request{}
-	self.ctx = appengine.NewContext(r)
+func NewRequest(w http.ResponseWriter, r *http.Request) (*Request, error) {
 	bytes, _ := ioutil.ReadAll(r.Body)
 	var update Update
 	json.Unmarshal(bytes, &update)
@@ -27,7 +23,11 @@ func NewRequest(r *http.Request) (*Request, error) {
 		}
 		updateMessage = update.EditedMessage
 	}
-	self.updateMessage = updateMessage
+	self := &Request{
+		ctx:           appengine.NewContext(r),
+		updateMessage: updateMessage,
+		writer:        w,
+	}
 	self.customDelayKey = datastore.NewKey(self.ctx, "DatastoreDelay", "", updateMessage.Chat.ID, nil)
 	self.gentleKey = self.DatastoreGetBool("Gentle")
 	self.stoppedKey = self.DatastoreGetBool("Stopped")
@@ -108,120 +108,44 @@ func (self *Request) IsStopped() bool {
 	return Stopped[self.updateMessage.Chat.ID]
 }
 
+func GetCommandName(text string) string {
+	command_name := ""
+	if strings.Index(text, "/") == 0 {
+		command_name = strings.Split(text, " ")[0]
+		splitted_command := strings.Split(command_name, "@")
+		if len(splitted_command) > 1 && splitted_command[1] == "xye_bot" {
+			command_name = splitted_command[0]
+		}
+	}
+	return command_name
+}
+
+func (self *Request) GetCommand() CommandIF {
+	command_name := GetCommandName(self.updateMessage.Text)
+	var command CommandIF
+	switch command_name {
+	case "/start":
+		command = &CommandStart{request: self}
+	case "/stop":
+		command = &CommandStop{request: self}
+	case "/help":
+		command = &CommandHelp{request: self}
+	case "/delay":
+		command = &CommandDelay{request: self}
+	case "/hardcore":
+		command = &CommandHardcore{request: self}
+	case "/gentle":
+		command = &CommandGentle{request: self}
+	case "/amount":
+		command = &CommandAmount{request: self}
+	default:
+		command = &CommandNotFound{request: self}
+	}
+	return command
+}
+
 func (self *Request) ParseCommand(w http.ResponseWriter) error {
-	if IsCommand(self.updateMessage.Text, "/start") {
-		message := "Привет! Я бот-хуебот.\n" +
-			"Я буду хуифицировать некоторые из Ваших фраз.\n" +
-			"Сейчас режим вежливости %s\n" +
-			"За подробностями в /help"
-		Stopped[self.updateMessage.Chat.ID] = false
-		self.stoppedStruct.Value = false
-		if _, err := datastore.Put(self.ctx, self.stoppedKey, &self.stoppedStruct); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-		}
-		if Gentle[self.updateMessage.Chat.ID] {
-			message = fmt.Sprintf(message, "включен")
-		} else {
-			message = fmt.Sprintf(message, "отключен")
-		}
-		SendMessage(w, self.updateMessage.Chat.ID, message, nil)
-		return nil
-	}
-
-	if IsCommand(self.updateMessage.Text, "/stop") {
-		Stopped[self.updateMessage.Chat.ID] = true
-		self.stoppedStruct.Value = true
-		if _, err := datastore.Put(self.ctx, self.stoppedKey, &self.stoppedStruct); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-		}
-		SendMessage(w, self.updateMessage.Chat.ID, "Выключаюсь", nil)
-		return nil
-	}
-
-	if IsCommand(self.updateMessage.Text, "/help") {
-		SendMessage(w, self.updateMessage.Chat.ID,
-			"Вежливый режим:\n"+
-				"  Для включения используйте команду /gentle\n"+
-				"  Для отключения - /hardcore\n"+
-				"Частота ответов: /delay N, где N - любое любое натуральное число\n"+
-				"Число хуифицируемых слов: /amount N, где N - от 1 до 10\n"+
-				"Для остановки используйте /stop", nil)
-		return nil
-	}
-	if IsCommand(self.updateMessage.Text, "/delay") {
-		command := strings.Fields(self.updateMessage.Text)
-		if len(command) < 2 {
-			currentDelayMessage := "Сейчас я пропускаю случайное число сообщений от 0 до "
-			if currentDelay, ok := CustomDelay[self.updateMessage.Chat.ID]; ok {
-				currentDelayMessage += strconv.Itoa(currentDelay)
-			} else {
-				currentDelayMessage += "4"
-			}
-			SendMessage(w, self.updateMessage.Chat.ID, currentDelayMessage, nil)
-			return nil
-		}
-		commandArg := command[len(command)-1]
-		tryDelay, err := strconv.Atoi(commandArg)
-		if err != nil || tryDelay < 1 || tryDelay > 1000000 {
-			SendMessage(w, self.updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/delay N`, где N любое натуральное число меньше 1000000", nil)
-			return nil
-		}
-		self.customDelay.Delay = tryDelay
-		if _, err := datastore.Put(self.ctx, self.customDelayKey, &self.customDelay); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-			SendMessage(w, self.updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000", nil)
-			return nil
-		}
-		CustomDelay[self.updateMessage.Chat.ID] = self.customDelay.Delay
-		SendMessage(w, self.updateMessage.Chat.ID, "Я буду пропускать случайное число сообщений от 0 до "+commandArg, nil)
-		delete(Delay, self.updateMessage.Chat.ID)
-		return nil
-	}
-	if IsCommand(self.updateMessage.Text, "/hardcore") {
-		Gentle[self.updateMessage.Chat.ID] = false
-		self.gentleStruct.Value = false
-		if _, err := datastore.Put(self.ctx, self.gentleKey, &self.gentleStruct); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-		}
-		SendMessage(w, self.updateMessage.Chat.ID, "Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle", nil)
-		return nil
-	}
-	if IsCommand(self.updateMessage.Text, "/gentle") {
-		Gentle[self.updateMessage.Chat.ID] = true
-		self.gentleStruct.Value = true
-		if _, err := datastore.Put(self.ctx, self.gentleKey, &self.gentleStruct); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-		}
-		SendMessage(w, self.updateMessage.Chat.ID, "Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore", nil)
-		return nil
-	}
-	if IsCommand(self.updateMessage.Text, "/amount") {
-		command := strings.Fields(self.updateMessage.Text)
-		if len(command) < 2 {
-			currentWordsAmount := 1
-			if currentAmount, ok := WordsAmount[self.updateMessage.Chat.ID]; ok {
-				currentWordsAmount = currentAmount
-			}
-			SendMessage(w, self.updateMessage.Chat.ID, "Сейчас я хуифицирую случайное число слов от 1 до "+strconv.Itoa(currentWordsAmount), nil)
-			return nil
-		}
-		commandArg := command[len(command)-1]
-		tryWordsAmount, err := strconv.Atoi(commandArg)
-		if err != nil || tryWordsAmount < 1 || tryWordsAmount > 10 {
-			SendMessage(w, self.updateMessage.Chat.ID, "Неправильный аргумент, отправьте `/amount N`, где N любое натуральное число не больше 10", nil)
-			return nil
-		}
-		self.wordsAmountStruct.Value = tryWordsAmount
-		if _, err := datastore.Put(self.ctx, self.wordsAmountKey, &self.wordsAmountStruct); err != nil {
-			log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-			SendMessage(w, self.updateMessage.Chat.ID, "Не удалось сохранить, отправьте еще раз `/amount N`, где N любое натуральное число не больше 10", nil)
-			return nil
-		}
-		WordsAmount[self.updateMessage.Chat.ID] = self.wordsAmountStruct.Value
-		SendMessage(w, self.updateMessage.Chat.ID, "Я буду хуифицировать случайное число слов от 1 до "+strconv.Itoa(self.wordsAmountStruct.Value), nil)
-		return nil
-	}
-	return errors.New("Команда не найдена")
+	return handleCommand(self.GetCommand())
 }
 
 func (self *Request) HandleDelay() {

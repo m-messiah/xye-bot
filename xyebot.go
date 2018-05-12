@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -28,17 +27,8 @@ func SendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *in
 	json.NewEncoder(w).Encode(msg)
 }
 
-func IsCommand(text, command string) bool {
-	if strings.Index(text, command) == 0 {
-		if strings.Contains(text, "@xye_bot") || !strings.Contains(text, "@") {
-			return true
-		}
-	}
-	return false
-}
-
 func Handler(w http.ResponseWriter, r *http.Request) {
-	request, err := NewRequest(r)
+	request, err := NewRequest(w, r)
 	if err != nil {
 		return
 	}
@@ -57,7 +47,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
 		output := request.Huify()
 		if output != "" {
-			SendMessage(w, request.updateMessage.Chat.ID, output, replyID)
+			SendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
 			return
 		}
 	}
