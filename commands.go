@@ -8,14 +8,6 @@ import (
 	"strings"
 )
 
-func switchStopped(request *Request, value bool) {
-	Stopped[request.updateMessage.Chat.ID] = value
-	request.stoppedStruct.Value = value
-	if _, err := datastore.Put(request.ctx, request.stoppedKey, &request.stoppedStruct); err != nil {
-		request.LogWarn(err)
-	}
-}
-
 type CommandStart Command
 
 func (self *CommandStart) Handle() error {
@@ -23,7 +15,7 @@ func (self *CommandStart) Handle() error {
 		"Я буду хуифицировать некоторые из Ваших фраз.\n" +
 		"Сейчас режим вежливости %s\n" +
 		"За подробностями в /help"
-	switchStopped(self.request, false)
+	switchDatastoreBool(self.request, "Stopped", false)
 	if Gentle[self.request.updateMessage.Chat.ID] {
 		message = fmt.Sprintf(message, "включен")
 	} else {
@@ -36,7 +28,7 @@ func (self *CommandStart) Handle() error {
 type CommandStop Command
 
 func (self *CommandStop) Handle() error {
-	switchStopped(self.request, true)
+	switchDatastoreBool(self.request, "Stopped", true)
 	self.request.Answer("Выключаюсь")
 	return nil
 }
@@ -85,10 +77,26 @@ func (self *CommandDelay) Handle() error {
 	return nil
 }
 
-func switchGentle(request *Request, value bool) {
-	Gentle[request.updateMessage.Chat.ID] = value
-	request.gentleStruct.Value = value
-	if _, err := datastore.Put(request.ctx, request.gentleKey, &request.gentleStruct); err != nil {
+func switchDatastoreBool(request *Request, dsName string, value bool) {
+	var localCache map[int64]bool
+	var resultStruct *DatastoreBool
+	var dsKey *datastore.Key
+	switch dsName {
+	case "Gentle":
+		localCache = Gentle
+		resultStruct = &request.gentleStruct
+		dsKey = request.gentleKey
+	case "Stopped":
+		localCache = Stopped
+		resultStruct = &request.stoppedStruct
+		dsKey = request.stoppedKey
+	default:
+		return
+	}
+
+	localCache[request.updateMessage.Chat.ID] = value
+	resultStruct.Value = value
+	if _, err := datastore.Put(request.ctx, dsKey, &resultStruct); err != nil {
 		request.LogWarn(err)
 	}
 }
@@ -96,7 +104,7 @@ func switchGentle(request *Request, value bool) {
 type CommandHardcore Command
 
 func (self *CommandHardcore) Handle() error {
-	switchGentle(self.request, false)
+	switchDatastoreBool(self.request, "Gentle", false)
 	self.request.Answer("Вежливый режим отключен.\nЧтобы включить его, используйте команду /gentle")
 	return nil
 }
@@ -104,7 +112,7 @@ func (self *CommandHardcore) Handle() error {
 type CommandGentle Command
 
 func (self *CommandGentle) Handle() error {
-	switchGentle(self.request, true)
+	switchDatastoreBool(self.request, "Gentle", true)
 	self.request.Answer("Вежливый режим включен.\nЧтобы отключить его, используйте команду /hardcore")
 	return nil
 }
