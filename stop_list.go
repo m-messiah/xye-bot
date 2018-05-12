@@ -4,14 +4,15 @@ import (
 	"regexp"
 )
 
-func inStopList(word string) bool {
-	if xaxaxa(word) {
+var XAXAXA_RE = regexp.MustCompile("^[ах]+$")
+
+func InStopList(word string) bool {
+	if IsXAXAXA(word) {
 		return true
 	}
 	return false
 }
 
-func xaxaxa(word string) bool {
-	reHa, _ := regexp.Compile("^[ах]+$")
-	return reHa.MatchString(word)
+func IsXAXAXA(word string) bool {
+	return XAXAXA_RE.MatchString(word)
 }
