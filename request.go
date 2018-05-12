@@ -35,6 +35,19 @@ func NewRequest(w http.ResponseWriter, r *http.Request) (*Request, error) {
 	return self, nil
 }
 
+func (self *Request) LogWarn(err error) {
+	log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
+}
+
+func (self *Request) Answer(message string) {
+	SendMessage(self.writer, self.updateMessage.Chat.ID, message, nil)
+}
+
+func (self *Request) AnswerErrorWithLog(message string, err error) {
+	self.LogWarn(err)
+	self.Answer(message)
+}
+
 func (self *Request) GetReplyIDIfNeeded() *int64 {
 	if self.updateMessage.ReplyTo != nil {
 		if self.updateMessage.ReplyTo.From.Username != nil {
