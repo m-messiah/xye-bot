@@ -1,7 +1,6 @@
 runtime: go
 api_version: go1
 threadsafe: true
-
 handlers:
 - url: /.*
   script: _go_app
