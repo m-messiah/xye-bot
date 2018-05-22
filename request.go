@@ -77,10 +77,10 @@ func (self *Request) DatastoreGetBool(datastoreDBName string) *datastore.Key {
 	}
 	datastoreKey := datastore.NewKey(self.ctx, datastoreDBName, "", self.updateMessage.Chat.ID, nil)
 	if _, ok := localCache[self.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(self.ctx, datastoreKey, &resultStruct); err != nil {
+		if err := datastore.Get(self.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
 			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(self.ctx, datastoreKey, &resultStruct); err != nil {
+			if _, err := datastore.Put(self.ctx, datastoreKey, resultStruct); err != nil {
 				log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
@@ -104,10 +104,10 @@ func (self *Request) DatastoreGetInt(datastoreDBName string) *datastore.Key {
 	}
 	datastoreKey := datastore.NewKey(self.ctx, datastoreDBName, "", self.updateMessage.Chat.ID, nil)
 	if _, ok := localCache[self.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(self.ctx, datastoreKey, &resultStruct); err != nil {
+		if err := datastore.Get(self.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
 			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(self.ctx, datastoreKey, &resultStruct); err != nil {
+			if _, err := datastore.Put(self.ctx, datastoreKey, resultStruct); err != nil {
 				log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
