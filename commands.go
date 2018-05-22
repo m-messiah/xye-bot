@@ -96,7 +96,7 @@ func switchDatastoreBool(request *Request, dsName string, value bool) {
 
 	localCache[request.updateMessage.Chat.ID] = value
 	resultStruct.Value = value
-	if _, err := datastore.Put(request.ctx, dsKey, &resultStruct); err != nil {
+	if _, err := datastore.Put(request.ctx, dsKey, resultStruct); err != nil {
 		request.LogWarn(err)
 	}
 }
