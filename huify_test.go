@@ -1,114 +1,151 @@
 package xyebot
 
 import (
-	. "gopkg.in/check.v1"
+	"fmt"
+	"testing"
 )
 
-func (s *TestSuite) TestRussian(c *C) {
-	result, ok := TryHuifyWord("привет")
-	c.Check(result, Equals, "хуивет")
-	c.Check(ok, Equals, true)
-	result, ok = TryHuifyWord("были")
-	c.Check(result, Equals, "хуили")
-	c.Check(ok, Equals, true)
-	result, ok = TryHuifyWord("китайцы")
-	c.Check(result, Equals, "хуитайцы")
-	c.Check(ok, Equals, true)
-	result, ok = TryHuifyWord("хахаха")
-	c.Check(result, Equals, "хахаха")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("ахаха")
-	c.Check(result, Equals, "ахаха")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("ахах")
-	c.Check(result, Equals, "ахах")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("хах")
-	c.Check(result, Equals, "хах")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("хха")
-	c.Check(result, Equals, "хха")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("аах")
-	c.Check(result, Equals, "аах")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("ах")
-	c.Check(result, Equals, "ах")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("в")
-	c.Check(result, Equals, "в")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("в ")
-	c.Check(result, Equals, "в")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord(" в")
-	c.Check(result, Equals, "в")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("")
-	c.Check(result, Equals, "")
-	c.Check(ok, Equals, false)
+type TestWordParams struct {
+	word         string
+	huified_word string
+	is_huified   bool
 }
 
-func (s *TestSuite) TestUkrainian(c *C) {
-	result, ok := TryHuifyWord("привіт")
-	c.Check(result, Equals, "хуівіт")
-	c.Check(ok, Equals, true)
-
-	result, ok = TryHuifyWord("вірила")
-	c.Check(result, Equals, "хуїрила")
-	c.Check(ok, Equals, true)
+func CheckWord(t *testing.T, params TestWordParams) {
+	t.Run(params.word, func(t *testing.T) {
+		result, ok := TryHuifyWord(params.word)
+		if result != params.huified_word {
+			t.Error(result, "!=", params.huified_word)
+		}
+		if ok != params.is_huified {
+			t.Error("is_huified?", ok, "!=", params.is_huified)
+		}
+	})
 }
 
-func (s *TestSuite) TestHuified(c *C) {
-	result, ok := TryHuifyWord("хуитайцы")
-	c.Check(result, Equals, "хуитайцы")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("хуютро")
-	c.Check(result, Equals, "хуютро")
-	c.Check(ok, Equals, false)
-	result, ok = TryHuifyWord("хутор")
-	c.Check(result, Equals, "хуютор")
-	c.Check(ok, Equals, true)
+type TestPhraseParams struct {
+	phrase         string
+	amount         int
+	huified_phrase string
 }
 
-func (s *TestSuite) TestSeveralWords(c *C) {
-	c.Check(TryHuify("привет", 5), Equals, "хуивет")
-	c.Check(TryHuify("привет бот", 0), Equals, "")
-	c.Check(TryHuify("привет бот", 1), Equals, "хуебот")
-	c.Check(TryHuify("доброе утро", 1), Equals, "хуютро")
-	c.Check(TryHuify("ты пьяный", 1), Equals, "хуяный")
-	c.Check(TryHuify("привет бот", 1), Equals, "хуебот")
-	c.Check(TryHuify("доброе утро", 4), Equals, "хуеброе хуютро")
-	c.Check(TryHuify("доброе утро", 2), Equals, "хуеброе хуютро")
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 1), Equals, "") // Слишком много слов
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 2), Equals, "хуень хуюдесный")
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 3), Equals, "- хуень хуюдесный")
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 4), Equals, "хуелнце - хуень хуюдесный")
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 5), Equals, "и хуелнце - хуень хуюдесный")
-	c.Check(TryHuify("Мороз и солнце - день чудесный", 6), Equals, "хуероз и хуелнце - хуень хуюдесный")
-	c.Check(TryHuify("Выйду ночью в поле с конем", 10), Equals, "хуийду хуечью в хуеле с хуенем")
-	c.Check(TryHuify("Выйду ночью в поле с конем", 1), Equals, "")
-	c.Check(TryHuify("Было или не было, прошло или нет", 10), Equals, "хуило хуили не хуило хуешло хуили нет")
-	c.Check(TryHuify("А не спеть ли мне песню?", 10), Equals, "а не хуеть ли мне хуесню")
-	c.Check(TryHuify("А не и да", 10), Equals, "")
+func CheckPhrase(t *testing.T, params TestPhraseParams) {
+	testName := fmt.Sprintf("%s_%d", params.phrase, params.amount)
+	t.Run(testName, func(t *testing.T) {
+		result := TryHuify(params.phrase, params.amount)
+		if result != params.huified_phrase {
+			t.Error(result, "!=", params.huified_phrase)
+		}
+	})
 }
 
-func (s *TestSuite) TestNonRus(c *C) {
-	c.Check(TryHuify("hello", 2), Equals, "")
-	c.Check(TryHuify("h", 2), Equals, "")
-	c.Check(TryHuify("h w", 2), Equals, "")
-	c.Check(TryHuify("h ", 2), Equals, "")
-	c.Check(TryHuify(" h", 2), Equals, "")
-	c.Check(TryHuify("123", 2), Equals, "")
-}
-func (s *TestSuite) TestDashed(c *C) {
-	c.Check(TryHuify("когда-то", 1), Equals, "хуегда-то")
-	c.Check(TryHuify("semi-drive", 1), Equals, "")
-	c.Check(TryHuify("шалтай-болтай", 1), Equals, "хуялтай-болтай")
-	c.Check(TryHuify("https://www.edx.org/by-sec-li-mitx-3", 1), Equals, "")
+func TestRussian(t *testing.T) {
+	tests := []TestWordParams{
+		{"привет", "хуивет", true},
+		{"были", "хуили", true},
+		{"хутор", "хуютор", true},
+		{"хахаха", "хахаха", false},
+		{"ахаха", "ахаха", false},
+		{"ахах", "ахах", false},
+		{"хах", "хах", false},
+		{"хха", "хха", false},
+		{"аах", "аах", false},
+		{"ах", "ах", false},
+		{"в", "в", false},
+		{"в ", "в", false},
+		{" в", "в", false},
+		{"", "", false},
+	}
+
+	for _, test := range tests {
+		CheckWord(t, test)
+	}
 }
 
-func (s *TestSuite) TestUrl(c *C) {
-	c.Check(TryHuify("сайт.рф", 1), Equals, "хуяйтрф")
-	c.Check(TryHuify("http://www.ru", 1), Equals, "")
+func TestUkrainian(t *testing.T) {
+	tests := []TestWordParams{
+		{"привіт", "хуівіт", true},
+		{"вірила", "хуїрила", true},
+	}
+
+	for _, test := range tests {
+		CheckWord(t, test)
+	}
+}
+
+func TestHuified(t *testing.T) {
+	tests := []TestWordParams{
+		{"хуивет", "хуивет", false},
+		{"хуютро", "хуютро", false},
+	}
+
+	for _, test := range tests {
+		CheckWord(t, test)
+	}
+}
+
+func TestSeveralWords(t *testing.T) {
+	tests := []TestPhraseParams{
+		{"привет", 5, "хуивет"},
+		{"привет бот", 0, ""},
+		{"привет бот", 1, "хуебот"},
+		{"доброе утро", 1, "хуютро"},
+		{"ты пьяный", 1, "хуяный"},
+		{"привет бот", 1, "хуебот"},
+		{"доброе утро", 4, "хуеброе хуютро"},
+		{"доброе утро", 2, "хуеброе хуютро"},
+		{"Мороз и солнце - день чудесный", 1, ""},
+		{"Мороз и солнце - день чудесный", 2, "хуень хуюдесный"},
+		{"Мороз и солнце - день чудесный", 3, "- хуень хуюдесный"},
+		{"Мороз и солнце - день чудесный", 4, "хуелнце - хуень хуюдесный"},
+		{"Мороз и солнце - день чудесный", 5, "и хуелнце - хуень хуюдесный"},
+		{"Мороз и солнце - день чудесный", 6, "хуероз и хуелнце - хуень хуюдесный"},
+		{"Выйду ночью в поле с конем", 10, "хуийду хуечью в хуеле с хуенем"},
+		{"Выйду ночью в поле с конем", 1, ""},
+		{"Было или не было, прошло или нет", 10, "хуило хуили не хуило хуешло хуили нет"},
+		{"А не спеть ли мне песню?", 10, "а не хуеть ли мне хуесню"},
+		{"А не и да", 10, ""},
+	}
+
+	for _, test := range tests {
+		CheckPhrase(t, test)
+	}
+}
+
+func TestNonRus(t *testing.T) {
+	tests := []TestPhraseParams{
+		{"hello", 2, ""},
+		{"h", 2, ""},
+		{"h w", 2, ""},
+		{"h ", 2, ""},
+		{" h", 2, ""},
+		{"123", 2, ""},
+	}
+
+	for _, test := range tests {
+		CheckPhrase(t, test)
+	}
+}
+func TestDashed(t *testing.T) {
+	tests := []TestPhraseParams{
+		{"когда-то", 1, "хуегда-то"},
+		{"шалтай-болтай", 1, "хуялтай-болтай"},
+		{"semi-drive", 1, ""},
+		{"https://www.edx.org/by-sec-li-mitx-3", 1, ""},
+	}
+
+	for _, test := range tests {
+		CheckPhrase(t, test)
+	}
+}
+
+func TestUrl(t *testing.T) {
+	tests := []TestPhraseParams{
+		{"сайт.рф", 1, "хуяйтрф"},
+		{"http://www.ru", 1, ""},
+	}
+
+	for _, test := range tests {
+		CheckPhrase(t, test)
+	}
 }
