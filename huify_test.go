@@ -49,6 +49,16 @@ func (s *TestSuite) TestRussian(c *C) {
 	c.Check(ok, Equals, false)
 }
 
+func (s *TestSuite) TestUkrainian(c *C) {
+	result, ok := TryHuifyWord("привіт")
+	c.Check(result, Equals, "хуівіт")
+	c.Check(ok, Equals, true)
+
+	result, ok = TryHuifyWord("вірила")
+	c.Check(result, Equals, "хуїрила")
+	c.Check(ok, Equals, true)
+}
+
 func (s *TestSuite) TestHuified(c *C) {
 	result, ok := TryHuifyWord("хуитайцы")
 	c.Check(result, Equals, "хуитайцы")
