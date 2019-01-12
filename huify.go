@@ -72,20 +72,20 @@ func IsHuifyApplicable(word string) (*string, bool) {
 }
 
 func IsUAWord(word string) bool {
-	for _, letter := range word {
-		if strings.Index(APPLY_UA_RULES, string(letter)) >= 0 {
+	for _, letter := range APPLY_UA_RULES {
+		if strings.Index(word, string(letter)) >= 0 {
 			return true
 		}
 	}
 	return false
 }
 
-func HuifyWord(postfix string) string {
-	if _, ok := RULES[postfix[0:2]]; ok {
+func HuifyWord(postfix string, rules map[string]string) string {
+	if _, ok := rules[postfix[0:2]]; ok {
 		if strings.Index(VOWELS, postfix[2:4]) < 0 {
-			return PREFIX + RULES[postfix[0:2]] + postfix[2:]
+			return PREFIX + rules[postfix[0:2]] + postfix[2:]
 		}
-		if huified, ok := RULES[postfix[2:4]]; ok {
+		if huified, ok := rules[postfix[2:4]]; ok {
 			return PREFIX + huified + postfix[4:]
 		}
 		return PREFIX + postfix[2:]
@@ -93,17 +93,11 @@ func HuifyWord(postfix string) string {
 	return PREFIX + postfix
 }
 
-func HuifyWordUA(postfix string) string {
-	if _, ok := UA_RULES[postfix[0:2]]; ok {
-		if strings.Index(VOWELS, postfix[2:4]) < 0 {
-			return PREFIX + UA_RULES[postfix[0:2]] + postfix[2:]
-		}
-		if huified, ok := UA_RULES[postfix[2:4]]; ok {
-			return PREFIX + huified + postfix[4:]
-		}
-		return PREFIX + postfix[2:]
+func Rules(word string) map[string]string {
+	if IsUAWord(word) {
+		return UA_RULES
 	}
-	return PREFIX + postfix
+	return RULES
 }
 
 func TryHuifyWord(text string) (string, bool) {
@@ -115,11 +109,7 @@ func TryHuifyWord(text string) (string, bool) {
 	}
 
 	if postfix, ok := IsHuifyApplicable(word); ok {
-		if IsUAWord(word) {
-			return HuifyWordUA(*postfix), true
-		} else {
-			return HuifyWord(*postfix), true
-		}
+		return HuifyWord(*postfix, Rules(word)), true
 	}
 
 	return word, false
