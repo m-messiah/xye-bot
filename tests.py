@@ -103,10 +103,8 @@ class TestApp(TestCase):
         self.assertEqual(huify(u'доброе утро'), u"хуютро")
         self.assertEqual(huify(u'ты пьяный'), u"хуяный")
         self.assertEqual(huify(u'были'), u"хуили")
-        self.assertEqual(huify(u'китайцы'), u"хуитайцы")
 
     def test_huify_huified(self):
-        self.assertEqual(huify(u'хуитайцы'), None)
         self.assertEqual(huify(u'хуютро'), None)
         self.assertEqual(huify(u'хутор'), u"хуютор")
 
