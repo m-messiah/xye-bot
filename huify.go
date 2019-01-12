@@ -7,13 +7,15 @@ import (
 )
 
 var PREFIX_TO_SKIP_RE = regexp.MustCompile("^[бвгджзйклмнпрстфхцчшщьъ]+")
-var NON_LETTERS_RE = regexp.MustCompile("[^а-яё-]+")
+var NON_LETTERS_RE = regexp.MustCompile("[^а-яёії-]+")
 var ONLY_DASHES_RE = regexp.MustCompile("^-*$")
 var RULES = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
+var UA_RULES = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и", "и": "і", "і": "ї"}
 
-const RULES_VALUES string = "еяюи"
+const APPLY_UA_RULES string = "ії"
+const RULES_VALUES string = "еяюиії"
 const PREFIX string = "ху"
-const VOWELS string = "оеаяуюы"
+const VOWELS string = "оеаяуюыі"
 
 func Huify(text string, gentle bool, amount int) string {
 	huified := TryHuify(text, amount)
@@ -69,12 +71,34 @@ func IsHuifyApplicable(word string) (*string, bool) {
 	return &postfix, true
 }
 
+func IsUAWord(word string) bool {
+	for _, letter := range word {
+		if strings.Index(APPLY_UA_RULES, string(letter)) >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func HuifyWord(postfix string) string {
 	if _, ok := RULES[postfix[0:2]]; ok {
 		if strings.Index(VOWELS, postfix[2:4]) < 0 {
 			return PREFIX + RULES[postfix[0:2]] + postfix[2:]
 		}
 		if huified, ok := RULES[postfix[2:4]]; ok {
+			return PREFIX + huified + postfix[4:]
+		}
+		return PREFIX + postfix[2:]
+	}
+	return PREFIX + postfix
+}
+
+func HuifyWordUA(postfix string) string {
+	if _, ok := UA_RULES[postfix[0:2]]; ok {
+		if strings.Index(VOWELS, postfix[2:4]) < 0 {
+			return PREFIX + UA_RULES[postfix[0:2]] + postfix[2:]
+		}
+		if huified, ok := UA_RULES[postfix[2:4]]; ok {
 			return PREFIX + huified + postfix[4:]
 		}
 		return PREFIX + postfix[2:]
@@ -91,7 +115,11 @@ func TryHuifyWord(text string) (string, bool) {
 	}
 
 	if postfix, ok := IsHuifyApplicable(word); ok {
-		return HuifyWord(*postfix), true
+		if IsUAWord(word) {
+			return HuifyWordUA(*postfix), true
+		} else {
+			return HuifyWord(*postfix), true
+		}
 	}
 
 	return word, false
