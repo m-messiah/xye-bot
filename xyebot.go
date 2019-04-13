@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-const DEFAULT_DELAY = 4
+const defaultDelay = 4
 
-var Delay map[int64]int
-var Gentle map[int64]bool
-var WordsAmount map[int64]int
-var Stopped map[int64]bool
-var CustomDelay map[int64]int
+var delayMap map[int64]int
+var gentleMap map[int64]bool
+var wordsAmountMap map[int64]int
+var stoppedMap map[int64]bool
+var customDelayMap map[int64]int
 
-func SendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
+func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
 	var msg Response
 	if replyToID == nil {
 		msg = Response{Chatid: chatID, Text: text, Method: "sendMessage"}
@@ -27,39 +27,39 @@ func SendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *in
 	json.NewEncoder(w).Encode(msg)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	request, err := NewRequest(w, r)
+func handler(w http.ResponseWriter, r *http.Request) {
+	request, err := newRequest(w, r)
 	if err != nil {
 		return
 	}
-	if err = request.ParseCommand(w); err == nil {
+	if err = request.parseCommand(w); err == nil {
 		return
 	}
-	if request.IsStopped() {
+	if request.isStopped() {
 		return
 	}
-	request.HandleDelay()
-	replyID := request.GetReplyIDIfNeeded()
-	if request.IsAnswerNeeded(replyID) {
+	request.handleDelay()
+	replyID := request.getReplyIDIfNeeded()
+	if request.isAnswerNeeded(replyID) {
 		if replyID == nil {
-			request.CleanDelay()
+			request.cleanDelay()
 		}
 		// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
-		output := request.Huify()
+		output := request.huify()
 		if output != "" {
-			SendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
+			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
 			return
 		}
 	}
 }
 
 func init() {
-	Delay = make(map[int64]int)
-	Gentle = make(map[int64]bool)
-	WordsAmount = make(map[int64]int)
-	Stopped = make(map[int64]bool)
-	CustomDelay = make(map[int64]int)
+	delayMap = make(map[int64]int)
+	gentleMap = make(map[int64]bool)
+	wordsAmountMap = make(map[int64]int)
+	stoppedMap = make(map[int64]bool)
+	customDelayMap = make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	http.HandleFunc("/", Handler)
+	http.HandleFunc("/", handler)
 }

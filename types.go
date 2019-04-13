@@ -50,7 +50,7 @@ type DatastoreInt struct {
 	Value int
 }
 
-type Request struct {
+type requestInfo struct {
 	customDelay       DatastoreDelay
 	gentleStruct      DatastoreBool
 	wordsAmountStruct DatastoreInt
@@ -64,14 +64,14 @@ type Request struct {
 	writer            http.ResponseWriter
 }
 
-type Command struct {
-	request *Request
+type botCommand struct {
+	request *requestInfo
 }
 
-type CommandIF interface {
+type commandInterface interface {
 	Handle() error
 }
 
-func handleCommand(command CommandIF) error {
+func handleCommand(command commandInterface) error {
 	return command.Handle()
 }

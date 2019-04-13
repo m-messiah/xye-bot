@@ -6,35 +6,35 @@ import (
 )
 
 type TestWordParams struct {
-	word         string
-	huified_word string
-	is_huified   bool
+	word        string
+	huifiedWord string
+	isHuified   bool
 }
 
 func CheckWord(t *testing.T, params TestWordParams) {
 	t.Run(params.word, func(t *testing.T) {
-		result, ok := TryHuifyWord(params.word)
-		if result != params.huified_word {
-			t.Error(result, "!=", params.huified_word)
+		result, ok := tryHuifyWord(params.word)
+		if result != params.huifiedWord {
+			t.Error(result, "!=", params.huifiedWord)
 		}
-		if ok != params.is_huified {
-			t.Error("is_huified?", ok, "!=", params.is_huified)
+		if ok != params.isHuified {
+			t.Error("isHuified?", ok, "!=", params.isHuified)
 		}
 	})
 }
 
 type TestPhraseParams struct {
-	phrase         string
-	amount         int
-	huified_phrase string
+	phrase        string
+	amount        int
+	huifiedPhrase string
 }
 
 func CheckPhrase(t *testing.T, params TestPhraseParams) {
 	testName := fmt.Sprintf("%s_%d", params.phrase, params.amount)
 	t.Run(testName, func(t *testing.T) {
-		result := TryHuify(params.phrase, params.amount)
-		if result != params.huified_phrase {
-			t.Error(result, "!=", params.huified_phrase)
+		result := tryHuify(params.phrase, params.amount)
+		if result != params.huifiedPhrase {
+			t.Error(result, "!=", params.huifiedPhrase)
 		}
 	})
 }
