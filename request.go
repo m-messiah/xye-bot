@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func NewRequest(w http.ResponseWriter, r *http.Request) (*Request, error) {
+func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 	bytes, _ := ioutil.ReadAll(r.Body)
 	var update Update
 	json.Unmarshal(bytes, &update)
@@ -23,174 +23,174 @@ func NewRequest(w http.ResponseWriter, r *http.Request) (*Request, error) {
 		}
 		updateMessage = update.EditedMessage
 	}
-	self := &Request{
+	request := &requestInfo{
 		ctx:           appengine.NewContext(r),
 		updateMessage: updateMessage,
 		writer:        w,
 	}
-	self.customDelayKey = datastore.NewKey(self.ctx, "DatastoreDelay", "", updateMessage.Chat.ID, nil)
-	self.gentleKey = self.DatastoreGetBool("Gentle")
-	self.stoppedKey = self.DatastoreGetBool("Stopped")
-	self.wordsAmountKey = self.DatastoreGetInt("WordsAmount")
-	return self, nil
+	request.customDelayKey = datastore.NewKey(request.ctx, "DatastoreDelay", "", updateMessage.Chat.ID, nil)
+	request.gentleKey = request.datastoreGetBool("Gentle")
+	request.stoppedKey = request.datastoreGetBool("Stopped")
+	request.wordsAmountKey = request.datastoreGetInt("WordsAmount")
+	return request, nil
 }
 
-func (self *Request) LogWarn(err error) {
-	log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
+func (request *requestInfo) logWarn(err error) {
+	log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
 }
 
-func (self *Request) Answer(message string) {
-	SendMessage(self.writer, self.updateMessage.Chat.ID, message, nil)
+func (request *requestInfo) answer(message string) {
+	sendMessage(request.writer, request.updateMessage.Chat.ID, message, nil)
 }
 
-func (self *Request) AnswerErrorWithLog(message string, err error) {
-	self.LogWarn(err)
-	self.Answer(message)
+func (request *requestInfo) answerErrorWithLog(message string, err error) {
+	request.logWarn(err)
+	request.answer(message)
 }
 
-func (self *Request) GetReplyIDIfNeeded() *int64 {
-	if self.updateMessage.ReplyTo != nil {
-		if self.updateMessage.ReplyTo.From.Username != nil {
-			if strings.Compare(*self.updateMessage.ReplyTo.From.Username, "xye_bot") == 0 {
-				return &self.updateMessage.ID
+func (request *requestInfo) getReplyIDIfNeeded() *int64 {
+	if request.updateMessage.ReplyTo != nil {
+		if request.updateMessage.ReplyTo.From.Username != nil {
+			if strings.Compare(*request.updateMessage.ReplyTo.From.Username, "xye_bot") == 0 {
+				return &request.updateMessage.ID
 			}
 		}
 	}
 	return nil
 }
 
-func (self *Request) DatastoreGetBool(datastoreDBName string) *datastore.Key {
+func (request *requestInfo) datastoreGetBool(datastoreDBName string) *datastore.Key {
 	var localCache map[int64]bool
 	var resultStruct *DatastoreBool
 	var defaultValue bool
 	switch datastoreDBName {
 	case "Gentle":
-		localCache = Gentle
-		resultStruct = &self.gentleStruct
+		localCache = gentleMap
+		resultStruct = &request.gentleStruct
 		defaultValue = true
 	case "Stopped":
-		localCache = Stopped
-		resultStruct = &self.stoppedStruct
+		localCache = stoppedMap
+		resultStruct = &request.stoppedStruct
 		defaultValue = false
 	default:
 		return nil
 	}
-	datastoreKey := datastore.NewKey(self.ctx, datastoreDBName, "", self.updateMessage.Chat.ID, nil)
-	if _, ok := localCache[self.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(self.ctx, datastoreKey, resultStruct); err != nil {
+	datastoreKey := datastore.NewKey(request.ctx, datastoreDBName, "", request.updateMessage.Chat.ID, nil)
+	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
+		if err := datastore.Get(request.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
-			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(self.ctx, datastoreKey, resultStruct); err != nil {
-				log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
+			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
+			if _, err := datastore.Put(request.ctx, datastoreKey, resultStruct); err != nil {
+				log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
-			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
+			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
 		}
 	}
 	return datastoreKey
 }
 
-func (self *Request) DatastoreGetInt(datastoreDBName string) *datastore.Key {
+func (request *requestInfo) datastoreGetInt(datastoreDBName string) *datastore.Key {
 	var localCache map[int64]int
 	var resultStruct *DatastoreInt
 	var defaultValue int
 	switch datastoreDBName {
 	case "WordsAmount":
-		localCache = WordsAmount
-		resultStruct = &self.wordsAmountStruct
+		localCache = wordsAmountMap
+		resultStruct = &request.wordsAmountStruct
 		defaultValue = 1
 	default:
 		return nil
 	}
-	datastoreKey := datastore.NewKey(self.ctx, datastoreDBName, "", self.updateMessage.Chat.ID, nil)
-	if _, ok := localCache[self.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(self.ctx, datastoreKey, resultStruct); err != nil {
+	datastoreKey := datastore.NewKey(request.ctx, datastoreDBName, "", request.updateMessage.Chat.ID, nil)
+	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
+		if err := datastore.Get(request.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
-			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(self.ctx, datastoreKey, resultStruct); err != nil {
-				log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
+			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
+			if _, err := datastore.Put(request.ctx, datastoreKey, resultStruct); err != nil {
+				log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
-			localCache[self.updateMessage.Chat.ID] = resultStruct.Value
+			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
 		}
 	}
 	return datastoreKey
 }
 
-func (self *Request) IsStopped() bool {
-	return Stopped[self.updateMessage.Chat.ID]
+func (request *requestInfo) isStopped() bool {
+	return stoppedMap[request.updateMessage.Chat.ID]
 }
 
-func GetCommandName(text string) string {
-	command_name := ""
+func getCommandName(text string) string {
+	commandName := ""
 	if strings.Index(text, "/") == 0 {
-		command_name = strings.Split(text, " ")[0]
-		splitted_command := strings.Split(command_name, "@")
-		if len(splitted_command) > 1 && splitted_command[1] == "xye_bot" {
-			command_name = splitted_command[0]
+		commandName = strings.Split(text, " ")[0]
+		splittedCommand := strings.Split(commandName, "@")
+		if len(splittedCommand) > 1 && splittedCommand[1] == "xye_bot" {
+			commandName = splittedCommand[0]
 		}
 	}
-	return command_name
+	return commandName
 }
 
-func (self *Request) GetCommand() CommandIF {
-	command_name := GetCommandName(self.updateMessage.Text)
-	var command CommandIF
-	switch command_name {
+func (request *requestInfo) getCommand() commandInterface {
+	commandName := getCommandName(request.updateMessage.Text)
+	var command commandInterface
+	switch commandName {
 	case "/start":
-		command = &CommandStart{request: self}
+		command = &commandStart{request: request}
 	case "/stop":
-		command = &CommandStop{request: self}
+		command = &commandStop{request: request}
 	case "/help":
-		command = &CommandHelp{request: self}
+		command = &commandHelp{request: request}
 	case "/delay":
-		command = &CommandDelay{request: self}
+		command = &commandDelay{request: request}
 	case "/hardcore":
-		command = &CommandHardcore{request: self}
+		command = &commandHardcore{request: request}
 	case "/gentle":
-		command = &CommandGentle{request: self}
+		command = &commandGentle{request: request}
 	case "/amount":
-		command = &CommandAmount{request: self}
+		command = &commandAmount{request: request}
 	default:
-		command = &CommandNotFound{request: self}
+		command = &commandNotFound{request: request}
 	}
 	return command
 }
 
-func (self *Request) ParseCommand(w http.ResponseWriter) error {
-	return handleCommand(self.GetCommand())
+func (request *requestInfo) parseCommand(w http.ResponseWriter) error {
+	return handleCommand(request.getCommand())
 }
 
-func (self *Request) HandleDelay() {
-	if _, ok := Delay[self.updateMessage.Chat.ID]; ok {
-		Delay[self.updateMessage.Chat.ID]--
+func (request *requestInfo) handleDelay() {
+	if _, ok := delayMap[request.updateMessage.Chat.ID]; ok {
+		delayMap[request.updateMessage.Chat.ID]--
 	} else {
-		if currentDelay, ok := CustomDelay[self.updateMessage.Chat.ID]; ok {
-			Delay[self.updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
+		if currentDelay, ok := customDelayMap[request.updateMessage.Chat.ID]; ok {
+			delayMap[request.updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 		} else {
-			if err := datastore.Get(self.ctx, self.customDelayKey, &self.customDelay); err != nil {
-				log.Infof(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
-				self.customDelay.Delay = DEFAULT_DELAY
-				CustomDelay[self.updateMessage.Chat.ID] = DEFAULT_DELAY
-				if _, err := datastore.Put(self.ctx, self.customDelayKey, &self.customDelay); err != nil {
-					log.Warningf(self.ctx, "[%v] %s", self.updateMessage.Chat.ID, err.Error())
+			if err := datastore.Get(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
+				log.Infof(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+				request.customDelay.Delay = defaultDelay
+				customDelayMap[request.updateMessage.Chat.ID] = defaultDelay
+				if _, err := datastore.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
+					log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
 				}
 			} else {
-				CustomDelay[self.updateMessage.Chat.ID] = self.customDelay.Delay
-				Delay[self.updateMessage.Chat.ID] = rand.Intn(self.customDelay.Delay + 1)
+				customDelayMap[request.updateMessage.Chat.ID] = request.customDelay.Delay
+				delayMap[request.updateMessage.Chat.ID] = rand.Intn(request.customDelay.Delay + 1)
 			}
 		}
 	}
 }
 
-func (self *Request) IsAnswerNeeded(replyID *int64) bool {
-	return Delay[self.updateMessage.Chat.ID] == 0 || replyID != nil
+func (request *requestInfo) isAnswerNeeded(replyID *int64) bool {
+	return delayMap[request.updateMessage.Chat.ID] == 0 || replyID != nil
 }
 
-func (self *Request) CleanDelay() {
-	delete(Delay, self.updateMessage.Chat.ID)
+func (request *requestInfo) cleanDelay() {
+	delete(delayMap, request.updateMessage.Chat.ID)
 }
 
-func (self *Request) Huify() string {
-	return Huify(self.updateMessage.Text, Gentle[self.updateMessage.Chat.ID], rand.Intn(WordsAmount[self.updateMessage.Chat.ID])+1)
+func (request *requestInfo) huify() string {
+	return Huify(request.updateMessage.Text, gentleMap[request.updateMessage.Chat.ID], rand.Intn(wordsAmountMap[request.updateMessage.Chat.ID])+1)
 }
