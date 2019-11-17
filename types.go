@@ -1,8 +1,8 @@
-package xyebot
+package main
 
 import (
+	"cloud.google.com/go/datastore"
 	"context"
-	gae_ds "google.golang.org/appengine/datastore"
 	"net/http"
 )
 
@@ -57,10 +57,10 @@ type requestInfo struct {
 	stoppedStruct     DatastoreBool
 	updateMessage     *Message
 	ctx               context.Context
-	customDelayKey    *gae_ds.Key
-	gentleKey         *gae_ds.Key
-	stoppedKey        *gae_ds.Key
-	wordsAmountKey    *gae_ds.Key
+	customDelayKey    *datastore.Key
+	gentleKey         *datastore.Key
+	stoppedKey        *datastore.Key
+	wordsAmountKey    *datastore.Key
 	writer            http.ResponseWriter
 }
 
