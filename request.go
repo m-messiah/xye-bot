@@ -1,14 +1,14 @@
-package xyebot
+package main
 
 import (
+	"cloud.google.com/go/datastore"
 	"encoding/json"
 	"errors"
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/log"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -24,11 +24,11 @@ func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 		updateMessage = update.EditedMessage
 	}
 	request := &requestInfo{
-		ctx:           appengine.NewContext(r),
+		ctx:           r.Context(),
 		updateMessage: updateMessage,
 		writer:        w,
 	}
-	request.customDelayKey = datastore.NewKey(request.ctx, "DatastoreDelay", "", updateMessage.Chat.ID, nil)
+	request.customDelayKey = datastore.NameKey("DatastoreDelay", strconv.FormatInt(updateMessage.Chat.ID, 10), nil)
 	request.gentleKey = request.datastoreGetBool("Gentle")
 	request.stoppedKey = request.datastoreGetBool("Stopped")
 	request.wordsAmountKey = request.datastoreGetInt("WordsAmount")
@@ -36,7 +36,7 @@ func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 }
 
 func (request *requestInfo) logWarn(err error) {
-	log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+	log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 }
 
 func (request *requestInfo) answer(message string) {
@@ -75,13 +75,13 @@ func (request *requestInfo) datastoreGetBool(datastoreDBName string) *datastore.
 	default:
 		return nil
 	}
-	datastoreKey := datastore.NewKey(request.ctx, datastoreDBName, "", request.updateMessage.Chat.ID, nil)
+	datastoreKey := datastore.NameKey(datastoreDBName, strconv.FormatInt(request.updateMessage.Chat.ID, 10), nil)
 	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(request.ctx, datastoreKey, resultStruct); err != nil {
+		if err := datastoreClient.Get(request.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
+				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
@@ -102,13 +102,13 @@ func (request *requestInfo) datastoreGetInt(datastoreDBName string) *datastore.K
 	default:
 		return nil
 	}
-	datastoreKey := datastore.NewKey(request.ctx, datastoreDBName, "", request.updateMessage.Chat.ID, nil)
+	datastoreKey := datastore.NameKey(datastoreDBName, strconv.FormatInt(request.updateMessage.Chat.ID, 10), nil)
 	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
-		if err := datastore.Get(request.ctx, datastoreKey, resultStruct); err != nil {
+		if err := datastoreClient.Get(request.ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct.Value = defaultValue
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastore.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
+				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 			}
 		} else {
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
@@ -168,12 +168,12 @@ func (request *requestInfo) handleDelay() {
 		if currentDelay, ok := customDelayMap[request.updateMessage.Chat.ID]; ok {
 			delayMap[request.updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 		} else {
-			if err := datastore.Get(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-				log.Infof(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+			if err := datastoreClient.Get(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
+				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 				request.customDelay.Delay = defaultDelay
 				customDelayMap[request.updateMessage.Chat.ID] = defaultDelay
-				if _, err := datastore.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-					log.Warningf(request.ctx, "[%v] %s", request.updateMessage.Chat.ID, err.Error())
+				if _, err := datastoreClient.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
+					log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 				}
 			} else {
 				customDelayMap[request.updateMessage.Chat.ID] = request.customDelay.Delay

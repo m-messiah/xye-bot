@@ -1,4 +1,4 @@
-package xyebot
+package main
 
 var suggestions = [...]string{
 	"А быть может, ",

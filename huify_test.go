@@ -1,4 +1,4 @@
-package xyebot
+package main
 
 import (
 	"fmt"

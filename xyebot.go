@@ -1,9 +1,13 @@
-package xyebot
+package main
 
 import (
+	"cloud.google.com/go/datastore"
+	"context"
 	"encoding/json"
+	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -14,6 +18,7 @@ var gentleMap map[int64]bool
 var wordsAmountMap map[int64]int
 var stoppedMap map[int64]bool
 var customDelayMap map[int64]int
+var datastoreClient *datastore.Client
 
 func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
 	var msg Response
@@ -44,7 +49,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		if replyID == nil {
 			request.cleanDelay()
 		}
-		// log.Infof(ctx, "[%v] %s", updateMessage.Chat.ID, updateMessage.Text)
 		output := request.huify()
 		if output != "" {
 			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
@@ -53,13 +57,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func init() {
+func main() {
 	delayMap = make(map[int64]int)
 	gentleMap = make(map[int64]bool)
 	wordsAmountMap = make(map[int64]int)
 	stoppedMap = make(map[int64]bool)
 	customDelayMap = make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
+	var err error
+	datastoreClient, err = datastore.NewClient(context.Background(), "xye-bot")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	http.HandleFunc("/", handler)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("Defaulting to port %s", port)
+	}
+
+	log.Printf("Listening on port %s", port)
+	if err := http.ListenAndServe(":"+port, nil); err != nil {
+		log.Fatal(err)
+	}
 }
