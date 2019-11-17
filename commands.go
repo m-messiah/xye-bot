@@ -1,9 +1,9 @@
-package xyebot
+package main
 
 import (
+	"cloud.google.com/go/datastore"
 	"errors"
 	"fmt"
-	"google.golang.org/appengine/datastore"
 	"strconv"
 	"strings"
 )
@@ -67,7 +67,7 @@ func (commandRequest *commandDelay) Handle() error {
 		return nil
 	}
 	commandRequest.request.customDelay.Delay = tryDelay
-	if _, err := datastore.Put(commandRequest.request.ctx, commandRequest.request.customDelayKey, &commandRequest.request.customDelay); err != nil {
+	if _, err := datastoreClient.Put(commandRequest.request.ctx, commandRequest.request.customDelayKey, &commandRequest.request.customDelay); err != nil {
 		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/delay N`, где N любое натуральное число меньше 1000000", err)
 		return nil
 	}
@@ -96,7 +96,7 @@ func switchDatastoreBool(request *requestInfo, dsName string, value bool) {
 
 	localCache[request.updateMessage.Chat.ID] = value
 	resultStruct.Value = value
-	if _, err := datastore.Put(request.ctx, dsKey, resultStruct); err != nil {
+	if _, err := datastoreClient.Put(request.ctx, dsKey, resultStruct); err != nil {
 		request.logWarn(err)
 	}
 }
@@ -136,7 +136,7 @@ func (commandRequest *commandAmount) Handle() error {
 		return nil
 	}
 	commandRequest.request.wordsAmountStruct.Value = tryWordsAmount
-	if _, err := datastore.Put(commandRequest.request.ctx, commandRequest.request.wordsAmountKey, &commandRequest.request.wordsAmountStruct); err != nil {
+	if _, err := datastoreClient.Put(commandRequest.request.ctx, commandRequest.request.wordsAmountKey, &commandRequest.request.wordsAmountStruct); err != nil {
 		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/amount N`, где N любое натуральное число не больше 10", err)
 		return nil
 	}
