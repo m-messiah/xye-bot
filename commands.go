@@ -14,7 +14,7 @@ func (commandRequest *commandStart) Handle() error {
 	message := "Привет! Я бот-хуебот.\n" +
 		"Я буду хуифицировать некоторые из ваших фраз.\n" +
 		"Сейчас режим вежливости %s\n" +
-		"За подробностями в /help"
+		"За подробностями в /help."
 	switchDatastoreBool(commandRequest.request, "Stopped", false)
 	if gentleMap[commandRequest.request.updateMessage.Chat.ID] {
 		message = fmt.Sprintf(message, "включен")
