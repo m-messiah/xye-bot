@@ -81,7 +81,7 @@ func (request *requestInfo) datastoreGetBool(datastoreDBName string) *datastore.
 			resultStruct.Value = defaultValue
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
 			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
+				log.Printf("[%v] %s %+v - %s", request.updateMessage.Chat.ID, datastoreKey, resultStruct, err.Error())
 			}
 		} else {
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
@@ -108,7 +108,7 @@ func (request *requestInfo) datastoreGetInt(datastoreDBName string) *datastore.K
 			resultStruct.Value = defaultValue
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
 			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
+				log.Printf("[%v] %s %+v - %s", request.updateMessage.Chat.ID, datastoreKey, resultStruct, err.Error())
 			}
 		} else {
 			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
@@ -169,7 +169,7 @@ func (request *requestInfo) handleDelay() {
 			delayMap[request.updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
 		} else {
 			if err := datastoreClient.Get(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-				log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
+				log.Printf("[%v] %s - %s", request.updateMessage.Chat.ID, request.customDelayKey, err.Error())
 				request.customDelay.Delay = defaultDelay
 				customDelayMap[request.updateMessage.Chat.ID] = defaultDelay
 				if _, err := datastoreClient.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {

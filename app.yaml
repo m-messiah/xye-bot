@@ -2,3 +2,5 @@ runtime: go113
 handlers:
 - url: /.*
   script: auto
+manual_scaling:
+  instances: 1
