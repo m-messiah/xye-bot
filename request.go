@@ -173,7 +173,7 @@ func (request *requestInfo) handleDelay() {
 				request.customDelay.Delay = defaultDelay
 				customDelayMap[request.updateMessage.Chat.ID] = defaultDelay
 				if _, err := datastoreClient.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-					log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
+					log.Printf("[%v] %s - %s", request.updateMessage.Chat.ID, request.customDelayKey, err.Error())
 				}
 			} else {
 				customDelayMap[request.updateMessage.Chat.ID] = request.customDelay.Delay
