@@ -1,14 +1,15 @@
 package main
 
 import (
-	"cloud.google.com/go/datastore"
 	"context"
 	"net/http"
+
+	"cloud.google.com/go/datastore"
 )
 
 // Response to Telegram
 type Response struct {
-	Chatid    int64  `json:"chat_id"`
+	ChatID    int64  `json:"chat_id"`
 	Text      string `json:"text"`
 	Method    string `json:"method"`
 	ReplyToID *int64 `json:"reply_to_message_id"`
@@ -65,7 +66,7 @@ type requestInfo struct {
 }
 
 type botCommand struct {
-	request *requestInfo
+	request *requestInfo //nolint:structcheck
 }
 
 type commandInterface interface {

@@ -6,16 +6,20 @@ import (
 	"strings"
 )
 
-var prefixToSkipRe = regexp.MustCompile("^[бвгджзйклмнпрстфхцчшщьъ]+")
-var nonLettersRe = regexp.MustCompile("[^а-яёії-]+")
-var onlyDashesRe = regexp.MustCompile("^-*$")
-var vowelsRules = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
-var vowelsRulesUA = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и", "и": "і", "і": "ї"}
+var (
+	prefixToSkipRe = regexp.MustCompile("^[бвгджзйклмнпрстфхцчшщьъ]+")
+	nonLettersRe   = regexp.MustCompile("[^а-яёії-]+")
+	onlyDashesRe   = regexp.MustCompile("^-*$")
+	vowelsRules    = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и"}
+	vowelsRulesUA  = map[string]string{"о": "е", "а": "я", "у": "ю", "ы": "и", "и": "і", "і": "ї"}
+)
 
-const applyUARules string = "ії"
-const rulesValues string = "еяюиії"
-const huifiedPrefix string = "ху"
-const vowels string = "оеаяуюыі"
+const (
+	applyUARules  string = "ії"
+	rulesValues   string = "еяюиії"
+	huifiedPrefix string = "ху"
+	vowels        string = "оеаяуюыі"
+)
 
 // Huify given text by gentleness and limited amount
 func Huify(text string, gentle bool, amount int) string {
@@ -60,7 +64,7 @@ func isHuifyApplicable(word string) (*string, bool) {
 	}
 	postfix := prefixToSkipRe.ReplaceAllString(word, "")
 	// Пропускаем уже хуифицированные слова
-	if len(postfix) < 6 || word[:4] == huifiedPrefix && strings.Index(rulesValues, string(postfix[2:4])) >= 0 {
+	if len(postfix) < 6 || word[:4] == huifiedPrefix && strings.Contains(rulesValues, postfix[2:4]) {
 		return nil, false
 	}
 	// Пропускаем слова из стоп-листа
@@ -73,7 +77,7 @@ func isHuifyApplicable(word string) (*string, bool) {
 
 func isUAWord(word string) bool {
 	for _, letter := range applyUARules {
-		if strings.Index(word, string(letter)) >= 0 {
+		if strings.Contains(word, string(letter)) {
 			return true
 		}
 	}
@@ -82,7 +86,7 @@ func isUAWord(word string) bool {
 
 func huifyWord(postfix string, rules map[string]string) string {
 	if _, ok := rules[postfix[0:2]]; ok {
-		if strings.Index(vowels, postfix[2:4]) < 0 {
+		if !strings.Contains(vowels, postfix[2:4]) {
 			return huifiedPrefix + rules[postfix[0:2]] + postfix[2:]
 		}
 		if huified, ok := rules[postfix[2:4]]; ok {
