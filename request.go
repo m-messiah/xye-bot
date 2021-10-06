@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cloud.google.com/go/datastore"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -10,12 +9,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"cloud.google.com/go/datastore"
 )
 
 func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 	bytes, _ := ioutil.ReadAll(r.Body)
 	var update Update
-	json.Unmarshal(bytes, &update)
+	err := json.Unmarshal(bytes, &update)
+	if err != nil {
+		return nil, err
+	}
 	updateMessage := update.Message
 	if updateMessage == nil {
 		if update.EditedMessage == nil {
@@ -157,7 +161,7 @@ func (request *requestInfo) getCommand() commandInterface {
 	return command
 }
 
-func (request *requestInfo) parseCommand(w http.ResponseWriter) error {
+func (request *requestInfo) parseCommand() error {
 	return handleCommand(request.getCommand())
 }
 
