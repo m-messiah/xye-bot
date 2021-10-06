@@ -1,7 +1,17 @@
-steps:
-- id: deploy
-  uses: google-github-actions/deploy-appengine@main
-  with:
-    credentials: ${{ secrets.GCLOUD_SECRET }}
-    project_id: "xye-bot"
-    version: github
+name: gcloud-deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - id: deploy
+      uses: google-github-actions/deploy-appengine@main
+      with:
+        credentials: ${{ secrets.GCLOUD_SECRET }}
+        project_id: "xye-bot"
+        version: github
