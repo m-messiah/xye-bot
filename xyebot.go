@@ -1,7 +1,6 @@
 package main
 
 import (
-	"cloud.google.com/go/datastore"
 	"context"
 	"encoding/json"
 	"log"
@@ -9,27 +8,31 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"cloud.google.com/go/datastore"
 )
 
 const defaultDelay = 4
 
-var delayMap map[int64]int
-var gentleMap map[int64]bool
-var wordsAmountMap map[int64]int
-var stoppedMap map[int64]bool
-var customDelayMap map[int64]int
-var datastoreClient *datastore.Client
+var (
+	delayMap        map[int64]int
+	gentleMap       map[int64]bool
+	wordsAmountMap  map[int64]int
+	stoppedMap      map[int64]bool
+	customDelayMap  map[int64]int
+	datastoreClient *datastore.Client
+)
 
 func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
 	var msg Response
 	if replyToID == nil {
-		msg = Response{Chatid: chatID, Text: text, Method: "sendMessage"}
+		msg = Response{ChatID: chatID, Text: text, Method: "sendMessage"}
 	} else {
-		msg = Response{Chatid: chatID, Text: text, ReplyToID: replyToID, Method: "sendMessage"}
+		msg = Response{ChatID: chatID, Text: text, ReplyToID: replyToID, Method: "sendMessage"}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(msg)
+	_ = json.NewEncoder(w).Encode(msg)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +40,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	if err = request.parseCommand(w); err == nil {
+	if err = request.parseCommand(); err == nil {
 		return
 	}
 	if request.isStopped() {
