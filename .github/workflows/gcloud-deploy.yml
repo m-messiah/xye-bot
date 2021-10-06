@@ -1,0 +1,7 @@
+steps:
+- id: deploy
+  uses: google-github-actions/deploy-appengine@main
+  with:
+    credentials: ${{ secrets.GCLOUD_SECRET }}
+    project_id: "xye-bot"
+    version: github
