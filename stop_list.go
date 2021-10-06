@@ -7,10 +7,7 @@ import (
 var xaxaxaRe = regexp.MustCompile("^[ах]+$")
 
 func inStopList(word string) bool {
-	if isXAXAXA(word) {
-		return true
-	}
-	return false
+	return isXAXAXA(word)
 }
 
 func isXAXAXA(word string) bool {
