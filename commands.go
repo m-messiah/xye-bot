@@ -42,7 +42,8 @@ func (commandRequest *commandHelp) Handle() error {
 			"  Для отключения - /hardcore\n" +
 			"Частота ответов: /delay N, где N - любое любое натуральное число\n" +
 			"Число хуифицируемых слов: /amount N, где N - от 1 до 10\n" +
-			"Для остановки используйте /stop")
+			"Для остановки используйте /stop\n\n" + 
+			"По вопросам: https://github.com/m-messiah/xye-bot/issues")
 	return nil
 }
 
