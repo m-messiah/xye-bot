@@ -125,6 +125,13 @@ func (request *requestInfo) isStopped() bool {
 	return stoppedMap[request.updateMessage.Chat.ID]
 }
 
+func (request *requestInfo) getStatusString() string {
+	if request.isStopped() {
+		return "остановлен"
+	}
+	return "включен"
+}
+
 func getCommandName(text string) string {
 	commandName := ""
 	if strings.Index(text, "/") == 0 {
