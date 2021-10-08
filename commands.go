@@ -38,12 +38,14 @@ type commandHelp botCommand
 
 func (commandRequest *commandHelp) Handle() error {
 	commandRequest.request.answer(
-		"Вежливый режим:\n" +
-			"  Для включения используйте команду /gentle\n" +
-			"  Для отключения - /hardcore\n" +
-			"Частота ответов: /delay N, где N - любое любое натуральное число\n" +
-			"Число хуифицируемых слов: /amount N, где N - от 1 до 10\n" +
-			"Для остановки используйте /stop\n\n" +
+		"Статус бота: " + commandRequest.request.getStatusString() + "\n\n" +
+			"* Вежливый режим:\n" +
+			"  * Для включения используйте команду /gentle\n" +
+			"  * Для отключения - /hardcore\n" +
+			"* Частота ответов: /delay N, где N - любое любое натуральное число\n" +
+			"* Число хуифицируемых слов: /amount N, где N - от 1 до 10\n" +
+			"* Для остановки используйте /stop\n" +
+			"* Для перезапуска используйте /start\n\n" +
 			"По вопросам: https://github.com/m-messiah/xye-bot/issues")
 	return nil
 }
