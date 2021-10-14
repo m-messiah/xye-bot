@@ -60,6 +60,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func initClient() {
+	var err error
+	datastoreClient, err = datastore.NewClient(context.Background(), "xye-bot")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	delayMap = make(map[int64]int)
 	gentleMap = make(map[int64]bool)
@@ -67,12 +75,15 @@ func main() {
 	stoppedMap = make(map[int64]bool)
 	customDelayMap = make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
-	var err error
-	datastoreClient, err = datastore.NewClient(context.Background(), "xye-bot")
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	initClient()
+	go func() {
+		for {
+			if _, err := datastoreClient.Count(context.Background(), datastore.NewQuery("Stopped")); err != nil {
+				initClient()
+			}
+			time.Sleep(5 * time.Minute)
+		}
+	}()
 	http.HandleFunc("/", handler)
 	port := os.Getenv("PORT")
 	if port == "" {
