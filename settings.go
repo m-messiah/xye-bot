@@ -28,7 +28,10 @@ func initClient() *datastore.Client {
 }
 
 func NewSettings() Settings {
-	return Settings{client: initClient()}
+	return Settings{
+		client: initClient(),
+		cache:  make(map[string]*ChatSettings),
+	}
 }
 
 func (s Settings) Put(ctx context.Context, key *datastore.Key, src interface{}) (err error) {
