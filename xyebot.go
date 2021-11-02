@@ -1,26 +1,17 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
-
-	"cloud.google.com/go/datastore"
 )
 
-const defaultDelay = 4
-
 var (
-	delayMap        map[int64]int
-	gentleMap       map[int64]bool
-	wordsAmountMap  map[int64]int
-	stoppedMap      map[int64]bool
-	customDelayMap  map[int64]int
-	datastoreClient *datastore.Client
+	delayMap map[int64]int
+	settings Settings
 )
 
 func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
@@ -60,30 +51,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func initClient() {
-	var err error
-	datastoreClient, err = datastore.NewClient(context.Background(), "xye-bot")
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func main() {
 	delayMap = make(map[int64]int)
-	gentleMap = make(map[int64]bool)
-	wordsAmountMap = make(map[int64]int)
-	stoppedMap = make(map[int64]bool)
-	customDelayMap = make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
-	initClient()
-	go func() {
-		for {
-			if _, err := datastoreClient.Count(context.Background(), datastore.NewQuery("Stopped")); err != nil {
-				initClient()
-			}
-			time.Sleep(5 * time.Minute)
-		}
-	}()
+	settings = NewSettings()
 	http.HandleFunc("/", handler)
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"net/http"
-
-	"cloud.google.com/go/datastore"
 )
 
 // Response to Telegram
@@ -36,33 +34,11 @@ type Update struct {
 	EditedMessage *Message `json:"edited_message"`
 }
 
-// DatastoreDelay type for DataStore
-type DatastoreDelay struct {
-	Delay int
-}
-
-// DatastoreBool type for DataStore
-type DatastoreBool struct {
-	Value bool
-}
-
-// DatastoreInt type for DataStore
-type DatastoreInt struct {
-	Value int
-}
-
 type requestInfo struct {
-	customDelay       DatastoreDelay
-	gentleStruct      DatastoreBool
-	wordsAmountStruct DatastoreInt
-	stoppedStruct     DatastoreBool
-	updateMessage     *Message
-	ctx               context.Context
-	customDelayKey    *datastore.Key
-	gentleKey         *datastore.Key
-	stoppedKey        *datastore.Key
-	wordsAmountKey    *datastore.Key
-	writer            http.ResponseWriter
+	updateMessage *Message
+	ctx           context.Context
+	cacheID       string
+	writer        http.ResponseWriter
 }
 
 type botCommand struct {
