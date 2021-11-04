@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"cloud.google.com/go/datastore"
 )
 
 func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
@@ -23,7 +21,7 @@ func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 	updateMessage := update.Message
 	if updateMessage == nil {
 		if update.EditedMessage == nil {
-			return nil, errors.New("No message in update")
+			return nil, errors.New("no message in update")
 		}
 		updateMessage = update.EditedMessage
 	}
@@ -31,11 +29,9 @@ func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 		ctx:           r.Context(),
 		updateMessage: updateMessage,
 		writer:        w,
+		cacheID:       strconv.FormatInt(updateMessage.Chat.ID, 10),
 	}
-	request.customDelayKey = datastore.NameKey("DatastoreDelay", strconv.FormatInt(updateMessage.Chat.ID, 10), nil)
-	request.gentleKey = request.datastoreGetBool("Gentle")
-	request.stoppedKey = request.datastoreGetBool("Stopped")
-	request.wordsAmountKey = request.datastoreGetInt("WordsAmount")
+	settings.EnsureCache(request.ctx, request.cacheID)
 	return request, nil
 }
 
@@ -63,66 +59,8 @@ func (request *requestInfo) getReplyIDIfNeeded() *int64 {
 	return nil
 }
 
-func (request *requestInfo) datastoreGetBool(datastoreDBName string) *datastore.Key {
-	var localCache map[int64]bool
-	var resultStruct *DatastoreBool
-	var defaultValue bool
-	switch datastoreDBName {
-	case "Gentle":
-		localCache = gentleMap
-		resultStruct = &request.gentleStruct
-		defaultValue = true
-	case "Stopped":
-		localCache = stoppedMap
-		resultStruct = &request.stoppedStruct
-		defaultValue = false
-	default:
-		return nil
-	}
-	datastoreKey := datastore.NameKey(datastoreDBName, strconv.FormatInt(request.updateMessage.Chat.ID, 10), nil)
-	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
-		if err := datastoreClient.Get(request.ctx, datastoreKey, resultStruct); err != nil {
-			resultStruct.Value = defaultValue
-			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Printf("[%v] %s %+v - %s", request.updateMessage.Chat.ID, datastoreKey, resultStruct, err.Error())
-			}
-		} else {
-			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-		}
-	}
-	return datastoreKey
-}
-
-func (request *requestInfo) datastoreGetInt(datastoreDBName string) *datastore.Key {
-	var localCache map[int64]int
-	var resultStruct *DatastoreInt
-	var defaultValue int
-	switch datastoreDBName {
-	case "WordsAmount":
-		localCache = wordsAmountMap
-		resultStruct = &request.wordsAmountStruct
-		defaultValue = 1
-	default:
-		return nil
-	}
-	datastoreKey := datastore.NameKey(datastoreDBName, strconv.FormatInt(request.updateMessage.Chat.ID, 10), nil)
-	if _, ok := localCache[request.updateMessage.Chat.ID]; !ok {
-		if err := datastoreClient.Get(request.ctx, datastoreKey, resultStruct); err != nil {
-			resultStruct.Value = defaultValue
-			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-			if _, err := datastoreClient.Put(request.ctx, datastoreKey, resultStruct); err != nil {
-				log.Printf("[%v] %s %+v - %s", request.updateMessage.Chat.ID, datastoreKey, resultStruct, err.Error())
-			}
-		} else {
-			localCache[request.updateMessage.Chat.ID] = resultStruct.Value
-		}
-	}
-	return datastoreKey
-}
-
 func (request *requestInfo) isStopped() bool {
-	return stoppedMap[request.updateMessage.Chat.ID]
+	return !settings.cache[request.cacheID].Enabled
 }
 
 func (request *requestInfo) getStatusString() string {
@@ -176,21 +114,7 @@ func (request *requestInfo) handleDelay() {
 	if _, ok := delayMap[request.updateMessage.Chat.ID]; ok {
 		delayMap[request.updateMessage.Chat.ID]--
 	} else {
-		if currentDelay, ok := customDelayMap[request.updateMessage.Chat.ID]; ok {
-			delayMap[request.updateMessage.Chat.ID] = rand.Intn(currentDelay + 1)
-		} else {
-			if err := datastoreClient.Get(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-				log.Printf("[%v] %s - %s", request.updateMessage.Chat.ID, request.customDelayKey, err.Error())
-				request.customDelay.Delay = defaultDelay
-				customDelayMap[request.updateMessage.Chat.ID] = defaultDelay
-				if _, err := datastoreClient.Put(request.ctx, request.customDelayKey, &request.customDelay); err != nil {
-					log.Printf("[%v] %s - %s", request.updateMessage.Chat.ID, request.customDelayKey, err.Error())
-				}
-			} else {
-				customDelayMap[request.updateMessage.Chat.ID] = request.customDelay.Delay
-				delayMap[request.updateMessage.Chat.ID] = rand.Intn(request.customDelay.Delay + 1)
-			}
-		}
+		delayMap[request.updateMessage.Chat.ID] = rand.Intn(settings.cache[request.cacheID].Delay + 1)
 	}
 }
 
@@ -203,5 +127,5 @@ func (request *requestInfo) cleanDelay() {
 }
 
 func (request *requestInfo) huify() string {
-	return Huify(request.updateMessage.Text, gentleMap[request.updateMessage.Chat.ID], rand.Intn(wordsAmountMap[request.updateMessage.Chat.ID])+1)
+	return Huify(request.updateMessage.Text, settings.cache[request.cacheID].Gentle, rand.Intn(settings.cache[request.cacheID].WordsAmount)+1)
 }
