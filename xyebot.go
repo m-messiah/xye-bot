@@ -41,6 +41,7 @@ type DatastoreBool struct {
 
 type DatastoreGentle struct {
 	Gentle bool
+	Value  bool
 }
 
 // DatastoreInt type for DataStore
@@ -100,7 +101,7 @@ func migrate() {
 		chatSettings := settings.DefaultChatSettings()
 		chatSettings.Enabled = !stoppedValues[keyIndex].Value
 		if i := findIndex(gentleKeys, stoppedKey.Name); i > -1 {
-			chatSettings.Gentle = gentleValues[i].Gentle
+			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
 		}
 		if i := findIndex(delayKeys, stoppedKey.Name); i > -1 {
 			chatSettings.Delay = delayValues[i].Delay
