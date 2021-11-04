@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -82,26 +83,22 @@ func migrate() {
 		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
-	log.Printf("got %d stopped keys: %+v", len(stoppedKeys), stoppedValues)
-	if stoppedValues[findIndex(stoppedKeys, -1001499226015)].Value == false {
-		log.Printf("Still wrong data")
-		return
-	}
-	gentleValues := make([]DatastoreGentle, 200000)
+	log.Printf("got %d stopped keys", len(stoppedKeys))
+	var gentleValues []DatastoreGentle
 	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), &gentleValues)
 	if err != nil {
 		log.Printf("unable to get Gentle keys: %s", err)
 		return
 	}
 	log.Printf("got %d gentle keys", len(gentleKeys))
-	delayValues := make([]DatastoreDelay, 200000)
+	var delayValues []DatastoreDelay
 	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay"), &delayValues)
 	if err != nil {
 		log.Printf("unable to get Delay keys: %s", err)
 		return
 	}
 	log.Printf("got %d Delay keys", len(delayKeys))
-	wordsValues := make([]DatastoreInt, 200000)
+	var wordsValues []DatastoreInt
 	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), &wordsValues)
 	if err != nil {
 		log.Printf("unable to get WordsAmount keys: %s", err)
@@ -109,25 +106,25 @@ func migrate() {
 	}
 	log.Printf("got %d words keys", len(wordsKeys))
 
-	// log.Printf("chatSettings cleaned up. Starting migration")
-	// for keyIndex, stoppedKey := range stoppedKeys {
-	// 	chatSettings := settings.DefaultChatSettings()
-	// 	chatSettings.Enabled = stoppedValues[keyIndex].Value == false
-	// 	if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
-	// 		chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
-	// 	}
-	// 	if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
-	// 		chatSettings.Delay = max(delayValues[i].Delay, 0)
-	// 	}
-	// 	if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
-	// 		chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
-	// 	}
-	// 	settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
-	// 	if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
-	// 		log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
-	// 	}
-	// 	log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
-	// }
+	log.Printf("Starting migration")
+	for keyIndex, stoppedKey := range stoppedKeys {
+		chatSettings := settings.DefaultChatSettings()
+		chatSettings.Enabled = stoppedValues[keyIndex].Value == false
+		if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
+			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
+		}
+		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
+			chatSettings.Delay = max(delayValues[i].Delay, 0)
+		}
+		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
+			chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
+		}
+		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
+		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
+			log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
+		}
+		log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
+	}
 }
 
 func main() {
