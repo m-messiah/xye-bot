@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -59,9 +60,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func findIndex(keys []*datastore.Key, key string) int {
+func findIndex(keys []*datastore.Key, key int64) int {
 	for i, k := range keys {
-		if k.Name == key {
+		if k.ID == key {
 			return i
 		}
 	}
@@ -97,23 +98,31 @@ func migrate() {
 		return
 	}
 	log.Printf("got %d words keys", len(wordsKeys))
+
+	log.Printf("Cleanup chatSettings")
+	chatSettingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").KeysOnly(), nil)
+	for _, key := range chatSettingsKeys {
+		log.Printf("delete %s", key)
+		settings.client.Delete(context.Background(), key)
+	}
+	log.Printf("chatSettings cleaned up. Starting migration")
 	for keyIndex, stoppedKey := range stoppedKeys {
 		chatSettings := settings.DefaultChatSettings()
 		chatSettings.Enabled = !stoppedValues[keyIndex].Value
-		if i := findIndex(gentleKeys, stoppedKey.Name); i > -1 {
+		if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
 			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
 		}
-		if i := findIndex(delayKeys, stoppedKey.Name); i > -1 {
+		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
 			chatSettings.Delay = delayValues[i].Delay
 		}
-		if i := findIndex(wordsKeys, stoppedKey.Name); i > -1 {
+		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
 			chatSettings.WordsAmount = wordsValues[i].Value
 		}
-		settings.cache[stoppedKey.Name] = &chatSettings
-		if err := settings.SaveCache(context.Background(), stoppedKey.Name); err != nil {
-			log.Printf("could not save %s (%v): %s", stoppedKey.Name, chatSettings, err)
+		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
+		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
+			log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
 		}
-		log.Printf("saved successfully %s", stoppedKey.Name)
+		log.Printf("saved successfully %d", stoppedKey.ID)
 	}
 }
 
