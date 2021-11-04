@@ -10,8 +10,7 @@ import (
 type commandStatus botCommand
 
 func (commandRequest *commandStatus) Handle() error {
-	message := fmt.Sprintf("Current state: %d of %d, %0.2f", len(settings.cache), 69229, float64(100*len(settings.cache))/69229)
-	commandRequest.request.answer(message)
+	commandRequest.request.answer(fmt.Sprintf("Processed items: %d", len(settings.cache)))
 	return nil
 }
 

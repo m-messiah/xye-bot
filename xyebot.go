@@ -69,8 +69,8 @@ func findIndex(keys []*datastore.Key, key int64) int {
 	return -1
 }
 
-func min(a, b int) int {
-	if a < b {
+func max(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b
@@ -120,10 +120,10 @@ func migrate() {
 			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
 		}
 		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Delay = min(delayValues[i].Delay, 0)
+			chatSettings.Delay = max(delayValues[i].Delay, 0)
 		}
 		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
-			chatSettings.WordsAmount = min(wordsValues[i].Value, 1)
+			chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
 		}
 		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
 		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
