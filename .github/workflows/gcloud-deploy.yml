@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - migrator
+      - cleaner
 jobs:
   deploy:
     name: deploy
@@ -15,5 +15,5 @@ jobs:
       with:
         credentials: ${{ secrets.GCLOUD_SECRET }}
         project_id: "xye-bot"
-        version: migrator
+        version: cleaner
         promote: false

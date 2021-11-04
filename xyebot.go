@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -30,26 +29,6 @@ func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *in
 	_ = json.NewEncoder(w).Encode(msg)
 }
 
-// DatastoreDelay type for DataStore
-type DatastoreDelay struct {
-	Delay int
-}
-
-// DatastoreBool type for DataStore
-type DatastoreBool struct {
-	Value bool
-}
-
-type DatastoreGentle struct {
-	Gentle bool
-	Value  bool
-}
-
-// DatastoreInt type for DataStore
-type DatastoreInt struct {
-	Value int
-}
-
 func handler(w http.ResponseWriter, r *http.Request) {
 	request, err := newRequest(w, r)
 	if err != nil {
@@ -60,70 +39,62 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func findIndex(keys []*datastore.Key, key int64) int {
-	for i, k := range keys {
-		if k.ID == key {
-			return i
-		}
-	}
-	return -1
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func migrate() {
-	var stoppedValues []DatastoreBool
-	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), &stoppedValues)
+	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped").KeysOnly(), nil)
 	if err != nil {
 		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
-	log.Printf("got %d stopped keys", len(stoppedKeys))
-	var gentleValues []DatastoreGentle
-	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), &gentleValues)
+	if err := settings.client.DeleteMulti(context.Background(), stoppedKeys); err != nil {
+		log.Printf("unable to delete Stopped keys: %s", err)
+		return
+	}
+
+	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle").KeysOnly(), nil)
 	if err != nil {
 		log.Printf("unable to get Gentle keys: %s", err)
 		return
 	}
-	log.Printf("got %d gentle keys", len(gentleKeys))
-	var delayValues []DatastoreDelay
-	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay"), &delayValues)
+	if err := settings.client.DeleteMulti(context.Background(), gentleKeys); err != nil {
+		log.Printf("unable to delete Gentle keys: %s", err)
+		return
+	}
+
+	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay").KeysOnly(), nil)
 	if err != nil {
 		log.Printf("unable to get Delay keys: %s", err)
 		return
 	}
-	log.Printf("got %d Delay keys", len(delayKeys))
-	var wordsValues []DatastoreInt
-	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), &wordsValues)
+	if err := settings.client.DeleteMulti(context.Background(), delayKeys); err != nil {
+		log.Printf("unable to delete Delay keys: %s", err)
+		return
+	}
+
+	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount").KeysOnly(), nil)
 	if err != nil {
 		log.Printf("unable to get WordsAmount keys: %s", err)
 		return
 	}
-	log.Printf("got %d words keys", len(wordsKeys))
+	if err := settings.client.DeleteMulti(context.Background(), wordsKeys); err != nil {
+		log.Printf("unable to delete WordsAmount keys: %s", err)
+		return
+	}
 
-	log.Printf("Starting migration")
-	for keyIndex, stoppedKey := range stoppedKeys {
-		chatSettings := settings.DefaultChatSettings()
-		chatSettings.Enabled = stoppedValues[keyIndex].Value == false
-		if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
+	var settingsValues []ChatSettings
+	settingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings"), settingsValues)
+	if err != nil {
+		log.Printf("unable to get ChatSettings keys: %s", err)
+		return
+	}
+	var settingsKeysToDelete []*datastore.Key
+	for i, k := range settingsKeys {
+		if settingsValues[i].Enabled == false {
+			settingsKeysToDelete = append(settingsKeysToDelete, k)
 		}
-		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Delay = max(delayValues[i].Delay, 0)
-		}
-		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
-			chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
-		}
-		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
-		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
-			log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
-		}
-		log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
+	}
+	if err := settings.client.DeleteMulti(context.Background(), settingsKeysToDelete); err != nil {
+		log.Printf("unable to delete ChatSettings disabled keys: %s", err)
+		return
 	}
 }
 
