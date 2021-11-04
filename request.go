@@ -86,20 +86,8 @@ func (request *requestInfo) getCommand() commandInterface {
 	commandName := getCommandName(request.updateMessage.Text)
 	var command commandInterface
 	switch commandName {
-	case "/start":
-		command = &commandStart{request: request}
-	case "/stop":
-		command = &commandStop{request: request}
-	case "/help":
-		command = &commandHelp{request: request}
-	case "/delay":
-		command = &commandDelay{request: request}
-	case "/hardcore":
-		command = &commandHardcore{request: request}
-	case "/gentle":
-		command = &commandGentle{request: request}
-	case "/amount":
-		command = &commandAmount{request: request}
+	case "/status":
+		command = &commandStatus{request: request}
 	default:
 		command = &commandNotFound{request: request}
 	}

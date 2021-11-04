@@ -7,24 +7,10 @@ import (
 	"strings"
 )
 
-type commandStart botCommand
+type commandStatus botCommand
 
-func (commandRequest *commandStart) Handle() error {
-	message := "Привет! Я бот-хуебот.\n" +
-		"Я буду хуифицировать некоторые из ваших фраз.\n" +
-		"Сейчас режим вежливости %s\n" +
-		"За подробностями в /help."
-	settings.cache[commandRequest.request.cacheID].Enabled = true
-	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
-		commandRequest.request.logWarn(err)
-		// Do not send error to command
-		return nil
-	}
-	if settings.cache[commandRequest.request.cacheID].Gentle {
-		message = fmt.Sprintf(message, "включен")
-	} else {
-		message = fmt.Sprintf(message, "отключен")
-	}
+func (commandRequest *commandStatus) Handle() error {
+	message := fmt.Sprintf("Current state: %d of %d, %0.2f", len(settings.cache), 69229, float64(100*len(settings.cache))/69229)
 	commandRequest.request.answer(message)
 	return nil
 }

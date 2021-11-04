@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - master
-      - use-one-datastore
+      - migrator
 jobs:
   deploy:
     name: deploy
@@ -15,5 +15,5 @@ jobs:
       with:
         credentials: ${{ secrets.GCLOUD_SECRET }}
         project_id: "xye-bot"
-        version: use-one-datastore
+        version: migrator
         promote: false

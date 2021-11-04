@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
+
+	"cloud.google.com/go/datastore"
 )
 
 var (
@@ -26,6 +29,21 @@ func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *in
 	_ = json.NewEncoder(w).Encode(msg)
 }
 
+// DatastoreDelay type for DataStore
+type DatastoreDelay struct {
+	Delay int
+}
+
+// DatastoreBool type for DataStore
+type DatastoreBool struct {
+	Value bool
+}
+
+// DatastoreInt type for DataStore
+type DatastoreInt struct {
+	Value int
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	request, err := newRequest(w, r)
 	if err != nil {
@@ -34,25 +52,62 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err = request.parseCommand(); err == nil {
 		return
 	}
-	if request.isStopped() {
+}
+
+func findIndex(keys []*datastore.Key, key string) int {
+	for i, k := range keys {
+		if k.Name == key {
+			return i
+		}
+	}
+	return -1
+}
+
+func migrate() {
+	stoppedValues := make([]DatastoreBool, 200000)
+	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), stoppedValues)
+	if err != nil {
+		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
-	request.handleDelay()
-	replyID := request.getReplyIDIfNeeded()
-	if request.isAnswerNeeded(replyID) {
-		if replyID == nil {
-			request.cleanDelay()
+	gentleValues := make([]DatastoreBool, 200000)
+	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), gentleValues)
+	if err != nil {
+		log.Printf("unable to get Gentle keys: %s", err)
+		return
+	}
+	delayValues := make([]DatastoreDelay, 200000)
+	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay"), delayValues)
+	if err != nil {
+		log.Printf("unable to get Delay keys: %s", err)
+		return
+	}
+	wordsValues := make([]DatastoreInt, 200000)
+	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), wordsValues)
+	if err != nil {
+		log.Printf("unable to get WordsAmount keys: %s", err)
+		return
+	}
+	for keyIndex, stoppedKey := range stoppedKeys {
+		chatSettings := settings.DefaultChatSettings()
+		chatSettings.Enabled = !stoppedValues[keyIndex].Value
+		if i := findIndex(gentleKeys, stoppedKey.Name); i > -1 {
+			chatSettings.Gentle = gentleValues[i].Value
 		}
-		output := request.huify()
-		if output != "" {
-			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
-			return
+		if i := findIndex(delayKeys, stoppedKey.Name); i > -1 {
+			chatSettings.Delay = delayValues[i].Delay
+		}
+		if i := findIndex(wordsKeys, stoppedKey.Name); i > -1 {
+			chatSettings.WordsAmount = wordsValues[i].Value
+		}
+		settings.cache[stoppedKey.Name] = &chatSettings
+		if err := settings.SaveCache(context.Background(), stoppedKey.Name); err != nil {
+			log.Printf("could not save %s (%v): %s", stoppedKey.Name, chatSettings, err)
 		}
 	}
 }
 
 func main() {
-	delayMap = make(map[int64]int)
 	rand.Seed(time.Now().UTC().UnixNano())
 	settings = NewSettings()
 	http.HandleFunc("/", handler)
@@ -61,6 +116,8 @@ func main() {
 		port = "8080"
 		log.Printf("Defaulting to port %s", port)
 	}
+
+	go migrate()
 
 	log.Printf("Listening on port %s", port)
 	if err := http.ListenAndServe(":"+port, nil); err != nil {
