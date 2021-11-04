@@ -100,7 +100,7 @@ func migrate() {
 		chatSettings := settings.DefaultChatSettings()
 		chatSettings.Enabled = !stoppedValues[keyIndex].Value
 		if i := findIndex(gentleKeys, stoppedKey.Name); i > -1 {
-			chatSettings.Gentle = gentleValues[i].Value
+			chatSettings.Gentle = gentleValues[i].Gentle
 		}
 		if i := findIndex(delayKeys, stoppedKey.Name); i > -1 {
 			chatSettings.Delay = delayValues[i].Delay
