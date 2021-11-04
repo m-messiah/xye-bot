@@ -97,7 +97,7 @@ func migrate() {
 		log.Printf("unable to get Delay keys: %s", err)
 		return
 	}
-	log.Printf("got %d delay keys", len(delayKeys))
+	log.Printf("got %d delay keys: %+v", len(delayKeys), delayValues)
 	wordsValues := make([]DatastoreInt, 200000)
 	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), &wordsValues)
 	if err != nil {
