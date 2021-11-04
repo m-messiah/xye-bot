@@ -115,7 +115,7 @@ func migrate() {
 	log.Printf("chatSettings cleaned up. Starting migration")
 	for keyIndex, stoppedKey := range stoppedKeys {
 		chatSettings := settings.DefaultChatSettings()
-		chatSettings.Enabled = !stoppedValues[keyIndex].Value
+		chatSettings.Enabled = stoppedValues[keyIndex].Value == false
 		if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
 			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
 		}
@@ -129,7 +129,7 @@ func migrate() {
 		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
 			log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
 		}
-		log.Printf("saved successfully %d", stoppedKey.ID)
+		log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
 	}
 }
 
