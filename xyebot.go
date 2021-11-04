@@ -76,13 +76,17 @@ func max(a, b int) int {
 }
 
 func migrate() {
-	stoppedValues := make([]DatastoreBool, 200000)
+	stoppedValues := make([]*DatastoreBool, 200000)
 	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), &stoppedValues)
 	if err != nil {
 		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
-	log.Printf("got %d stopped keys", len(stoppedKeys))
+	log.Printf("got %d stopped keys: %+v", len(stoppedKeys), stoppedValues)
+	if stoppedValues[findIndex(stoppedKeys, -1001499226015)].Value == false {
+		log.Printf("Still wrong data")
+		return
+	}
 	gentleValues := make([]DatastoreGentle, 200000)
 	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), &gentleValues)
 	if err != nil {
@@ -94,11 +98,6 @@ func migrate() {
 	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay"), &delayValues)
 	if err != nil {
 		log.Printf("unable to get Delay keys: %s", err)
-		return
-	}
-	log.Printf("got %d delay keys: %+v", len(delayKeys), delayValues)
-	if delayValues[findIndex(delayKeys, -1001499918922)].Delay < 1000 {
-		log.Printf("Still wrong data")
 		return
 	}
 	wordsValues := make([]DatastoreInt, 200000)
