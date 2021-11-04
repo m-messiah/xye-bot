@@ -76,14 +76,14 @@ func max(a, b int) int {
 }
 
 func migrate() {
-	stoppedValues := make([]*DatastoreBool, 200000)
-	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), &stoppedValues)
+	var stoppedValues *[]*DatastoreBool
+	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), stoppedValues)
 	if err != nil {
 		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
 	log.Printf("got %d stopped keys: %+v", len(stoppedKeys), stoppedValues)
-	if stoppedValues[findIndex(stoppedKeys, -1001499226015)].Value == false {
+	if (*stoppedValues)[findIndex(stoppedKeys, -1001499226015)].Value == false {
 		log.Printf("Still wrong data")
 		return
 	}
