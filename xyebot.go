@@ -39,6 +39,10 @@ type DatastoreBool struct {
 	Value bool
 }
 
+type DatastoreGentle struct {
+	Gentle bool
+}
+
 // DatastoreInt type for DataStore
 type DatastoreInt struct {
 	Value int
@@ -71,7 +75,7 @@ func migrate() {
 		return
 	}
 	log.Printf("got %d stopped keys", len(stoppedKeys))
-	gentleValues := make([]DatastoreBool, 200000)
+	gentleValues := make([]DatastoreGentle, 200000)
 	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), &gentleValues)
 	if err != nil {
 		log.Printf("unable to get Gentle keys: %s", err)
