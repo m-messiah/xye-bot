@@ -69,6 +69,13 @@ func findIndex(keys []*datastore.Key, key int64) int {
 	return -1
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func migrate() {
 	stoppedValues := make([]DatastoreBool, 200000)
 	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped"), &stoppedValues)
@@ -99,12 +106,12 @@ func migrate() {
 	}
 	log.Printf("got %d words keys", len(wordsKeys))
 
-	log.Printf("Cleanup chatSettings")
-	chatSettingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").KeysOnly(), nil)
-	for _, key := range chatSettingsKeys {
-		log.Printf("delete %s", key)
-		settings.client.Delete(context.Background(), key)
-	}
+	// log.Printf("Cleanup chatSettings")
+	// chatSettingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").KeysOnly(), nil)
+	// for _, key := range chatSettingsKeys {
+	// 	log.Printf("delete %s", key)
+	// 	settings.client.Delete(context.Background(), key)
+	// }
 	log.Printf("chatSettings cleaned up. Starting migration")
 	for keyIndex, stoppedKey := range stoppedKeys {
 		chatSettings := settings.DefaultChatSettings()
@@ -113,10 +120,10 @@ func migrate() {
 			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
 		}
 		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Delay = delayValues[i].Delay
+			chatSettings.Delay = min(delayValues[i].Delay, 0)
 		}
 		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
-			chatSettings.WordsAmount = wordsValues[i].Value
+			chatSettings.WordsAmount = min(wordsValues[i].Value, 1)
 		}
 		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
 		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
