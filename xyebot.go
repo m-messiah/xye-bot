@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -98,6 +97,10 @@ func migrate() {
 		return
 	}
 	log.Printf("got %d delay keys: %+v", len(delayKeys), delayValues)
+	if delayValues[findIndex(delayKeys, -1001499918922)].Delay < 1000 {
+		log.Printf("Still wrong data")
+		return
+	}
 	wordsValues := make([]DatastoreInt, 200000)
 	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), &wordsValues)
 	if err != nil {
@@ -106,31 +109,25 @@ func migrate() {
 	}
 	log.Printf("got %d words keys", len(wordsKeys))
 
-	// log.Printf("Cleanup chatSettings")
-	// chatSettingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").KeysOnly(), nil)
-	// for _, key := range chatSettingsKeys {
-	// 	log.Printf("delete %s", key)
-	// 	settings.client.Delete(context.Background(), key)
+	// log.Printf("chatSettings cleaned up. Starting migration")
+	// for keyIndex, stoppedKey := range stoppedKeys {
+	// 	chatSettings := settings.DefaultChatSettings()
+	// 	chatSettings.Enabled = stoppedValues[keyIndex].Value == false
+	// 	if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
+	// 		chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
+	// 	}
+	// 	if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
+	// 		chatSettings.Delay = max(delayValues[i].Delay, 0)
+	// 	}
+	// 	if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
+	// 		chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
+	// 	}
+	// 	settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
+	// 	if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
+	// 		log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
+	// 	}
+	// 	log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
 	// }
-	log.Printf("chatSettings cleaned up. Starting migration")
-	for keyIndex, stoppedKey := range stoppedKeys {
-		chatSettings := settings.DefaultChatSettings()
-		chatSettings.Enabled = stoppedValues[keyIndex].Value == false
-		if i := findIndex(gentleKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Gentle = gentleValues[i].Gentle || gentleValues[i].Value
-		}
-		if i := findIndex(delayKeys, stoppedKey.ID); i > -1 {
-			chatSettings.Delay = max(delayValues[i].Delay, 0)
-		}
-		if i := findIndex(wordsKeys, stoppedKey.ID); i > -1 {
-			chatSettings.WordsAmount = max(wordsValues[i].Value, 1)
-		}
-		settings.cache[fmt.Sprintf("%d", stoppedKey.ID)] = &chatSettings
-		if err := settings.SaveCache(context.Background(), fmt.Sprintf("%d", stoppedKey.ID)); err != nil {
-			log.Printf("could not save %s (%v): %s", fmt.Sprintf("%d", stoppedKey.ID), chatSettings, err)
-		}
-		log.Printf("saved successfully %d, %v", stoppedKey.ID, chatSettings)
-	}
 }
 
 func main() {
