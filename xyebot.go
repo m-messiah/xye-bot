@@ -70,24 +70,28 @@ func migrate() {
 		log.Printf("unable to get Stopped keys: %s", err)
 		return
 	}
+	log.Printf("got %d stopped keys", len(stoppedKeys))
 	gentleValues := make([]DatastoreBool, 200000)
 	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle"), &gentleValues)
 	if err != nil {
 		log.Printf("unable to get Gentle keys: %s", err)
 		return
 	}
+	log.Printf("got %d gentle keys", len(gentleKeys))
 	delayValues := make([]DatastoreDelay, 200000)
 	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay"), &delayValues)
 	if err != nil {
 		log.Printf("unable to get Delay keys: %s", err)
 		return
 	}
+	log.Printf("got %d delay keys", len(delayKeys))
 	wordsValues := make([]DatastoreInt, 200000)
 	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount"), &wordsValues)
 	if err != nil {
 		log.Printf("unable to get WordsAmount keys: %s", err)
 		return
 	}
+	log.Printf("got %d words keys", len(wordsKeys))
 	for keyIndex, stoppedKey := range stoppedKeys {
 		chatSettings := settings.DefaultChatSettings()
 		chatSettings.Enabled = !stoppedValues[keyIndex].Value
@@ -104,6 +108,7 @@ func migrate() {
 		if err := settings.SaveCache(context.Background(), stoppedKey.Name); err != nil {
 			log.Printf("could not save %s (%v): %s", stoppedKey.Name, chatSettings, err)
 		}
+		log.Printf("saved successfully %s", stoppedKey.Name)
 	}
 }
 
