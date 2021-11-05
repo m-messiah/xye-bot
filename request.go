@@ -39,13 +39,13 @@ func (request *requestInfo) logWarn(err error) {
 	log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 }
 
-func (request *requestInfo) answer(message string) {
-	sendMessage(request.writer, request.updateMessage.Chat.ID, message, nil)
+func (request *requestInfo) answer(message, parseMode string) {
+	sendMessage(request.writer, request.updateMessage.Chat.ID, message, nil, parseMode)
 }
 
-func (request *requestInfo) answerErrorWithLog(message string, err error) {
+func (request *requestInfo) answerErrorWithLog(message string, err error, parseMode string) {
 	request.logWarn(err)
-	request.answer(message)
+	request.answer(message, parseMode)
 }
 
 func (request *requestInfo) getReplyIDIfNeeded() *int64 {

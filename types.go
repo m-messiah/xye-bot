@@ -7,10 +7,12 @@ import (
 
 // Response to Telegram
 type Response struct {
-	ChatID    int64  `json:"chat_id"`
-	Text      string `json:"text"`
-	Method    string `json:"method"`
-	ReplyToID *int64 `json:"reply_to_message_id"`
+	ChatID                int64  `json:"chat_id"`
+	Text                  string `json:"text"`
+	Method                string `json:"method"`
+	ReplyToID             *int64 `json:"reply_to_message_id"`
+	ParseMode             string `json:"parse_mode,omitempty"`
+	DisableWebPagePreview bool   `json:"disable_web_page_preview"`
 }
 
 // Chat Telegram structure
