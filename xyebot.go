@@ -80,19 +80,12 @@ func migrate() {
 		return
 	}
 
-	var settingsValues []ChatSettings
-	settingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings"), settingsValues)
+	settingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").Filter("Enabled = ", false).KeysOnly(), nil)
 	if err != nil {
 		log.Printf("unable to get ChatSettings keys: %s", err)
 		return
 	}
-	var settingsKeysToDelete []*datastore.Key
-	for i, k := range settingsKeys {
-		if settingsValues[i].Enabled == false {
-			settingsKeysToDelete = append(settingsKeysToDelete, k)
-		}
-	}
-	if err := settings.client.DeleteMulti(context.Background(), settingsKeysToDelete); err != nil {
+	if err := settings.client.DeleteMulti(context.Background(), settingsKeys); err != nil {
 		log.Printf("unable to delete ChatSettings disabled keys: %s", err)
 		return
 	}
