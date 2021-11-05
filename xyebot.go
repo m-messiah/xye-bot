@@ -9,17 +9,19 @@ import (
 	"time"
 )
 
+const MarkdownV2 = "MarkdownV2"
+
 var (
 	delayMap map[int64]int
 	settings Settings
 )
 
-func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64) {
+func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64, parseMode string) {
 	var msg Response
 	if replyToID == nil {
-		msg = Response{ChatID: chatID, Text: text, Method: "sendMessage"}
+		msg = Response{ChatID: chatID, Text: text, Method: "sendMessage", ParseMode: parseMode, DisableWebPagePreview: true}
 	} else {
-		msg = Response{ChatID: chatID, Text: text, ReplyToID: replyToID, Method: "sendMessage"}
+		msg = Response{ChatID: chatID, Text: text, ReplyToID: replyToID, Method: "sendMessage", ParseMode: parseMode, DisableWebPagePreview: true}
 	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -45,7 +47,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		output := request.huify()
 		if output != "" {
-			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID)
+			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID, "")
 			return
 		}
 	}
