@@ -39,56 +39,38 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func deleteKeys(name string, filtered bool) {
+	var keysToDelete []*datastore.Key
+	var err error
+	if filtered {
+		keysToDelete, err = settings.client.GetAll(context.Background(), datastore.NewQuery(name).Filter("Enabled = ", false).KeysOnly(), nil)
+	} else {
+		keysToDelete, err = settings.client.GetAll(context.Background(), datastore.NewQuery(name).KeysOnly(), nil)
+	}
+	if err != nil {
+		log.Printf("unable to get %s keys: %s", name, err)
+		return
+	}
+	log.Printf("got %s keys: %d", name, len(keysToDelete))
+	batch := 400
+	for i := 0; i < len(keysToDelete); i += batch {
+		j := i + batch
+		if j >= len(keysToDelete) {
+			j = len(keysToDelete) - 1
+		}
+		if err := settings.client.DeleteMulti(context.Background(), keysToDelete[i:j]); err != nil {
+			log.Printf("unable to delete %s keys: %s", name, err)
+			return
+		}
+	}
+}
+
 func migrate() {
-	stoppedKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Stopped").KeysOnly(), nil)
-	if err != nil {
-		log.Printf("unable to get Stopped keys: %s", err)
-		return
-	}
-	if err := settings.client.DeleteMulti(context.Background(), stoppedKeys); err != nil {
-		log.Printf("unable to delete Stopped keys: %s", err)
-		return
-	}
-
-	gentleKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("Gentle").KeysOnly(), nil)
-	if err != nil {
-		log.Printf("unable to get Gentle keys: %s", err)
-		return
-	}
-	if err := settings.client.DeleteMulti(context.Background(), gentleKeys); err != nil {
-		log.Printf("unable to delete Gentle keys: %s", err)
-		return
-	}
-
-	delayKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("DatastoreDelay").KeysOnly(), nil)
-	if err != nil {
-		log.Printf("unable to get Delay keys: %s", err)
-		return
-	}
-	if err := settings.client.DeleteMulti(context.Background(), delayKeys); err != nil {
-		log.Printf("unable to delete Delay keys: %s", err)
-		return
-	}
-
-	wordsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("WordsAmount").KeysOnly(), nil)
-	if err != nil {
-		log.Printf("unable to get WordsAmount keys: %s", err)
-		return
-	}
-	if err := settings.client.DeleteMulti(context.Background(), wordsKeys); err != nil {
-		log.Printf("unable to delete WordsAmount keys: %s", err)
-		return
-	}
-
-	settingsKeys, err := settings.client.GetAll(context.Background(), datastore.NewQuery("ChatSettings").Filter("Enabled = ", false).KeysOnly(), nil)
-	if err != nil {
-		log.Printf("unable to get ChatSettings keys: %s", err)
-		return
-	}
-	if err := settings.client.DeleteMulti(context.Background(), settingsKeys); err != nil {
-		log.Printf("unable to delete ChatSettings disabled keys: %s", err)
-		return
-	}
+	deleteKeys("Stopped", false)
+	deleteKeys("Gentle", false)
+	deleteKeys("DatastoreDelay", false)
+	deleteKeys("WordsAmount", false)
+	deleteKeys("ChatSettings", true)
 }
 
 func main() {
