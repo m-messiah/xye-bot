@@ -2,7 +2,7 @@ name: gcloud-deploy
 on:
   push:
     branches:
-      - master
+      - main
 jobs:
   deploy:
     name: deploy
