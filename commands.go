@@ -109,6 +109,32 @@ func (commandRequest *commandGentle) Handle() error {
 	return nil
 }
 
+type commandReply botCommand
+
+func (commandRequest *commandReply) Handle() error {
+	settings.cache[commandRequest.request.cacheID].Reply = true
+	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
+		commandRequest.request.logWarn(err)
+		// Do not send error to command
+		return nil
+	}
+	commandRequest.request.answer("Режим ответов на сообщения *включен*\nЧтобы отключить его, используйте команду /noreply", MarkdownV2)
+	return nil
+}
+
+type commandNoReply botCommand
+
+func (commandRequest *commandNoReply) Handle() error {
+	settings.cache[commandRequest.request.cacheID].Reply = false
+	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
+		commandRequest.request.logWarn(err)
+		// Do not send error to command
+		return nil
+	}
+	commandRequest.request.answer("Режим ответов на сообщения *отключен*\nЧтобы включить его, используйте команду /reply", MarkdownV2)
+	return nil
+}
+
 type commandAmount botCommand
 
 func (commandRequest *commandAmount) Handle() error {

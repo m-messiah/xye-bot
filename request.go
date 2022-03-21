@@ -48,13 +48,16 @@ func (request *requestInfo) answerErrorWithLog(message string, err error, parseM
 	request.answer(message, parseMode)
 }
 
+func (request *requestInfo) isReplyNeeded() bool {
+	return settings.cache[request.cacheID].Reply ||
+		(request.updateMessage.ReplyTo != nil &&
+			request.updateMessage.ReplyTo.From.Username != nil &&
+			strings.Compare(*request.updateMessage.ReplyTo.From.Username, "xye_bot") == 0)
+}
+
 func (request *requestInfo) getReplyIDIfNeeded() *int64 {
-	if request.updateMessage.ReplyTo != nil {
-		if request.updateMessage.ReplyTo.From.Username != nil {
-			if strings.Compare(*request.updateMessage.ReplyTo.From.Username, "xye_bot") == 0 {
-				return &request.updateMessage.ID
-			}
-		}
+	if request.isReplyNeeded() {
+		return &request.updateMessage.ID
 	}
 	return nil
 }
@@ -100,6 +103,10 @@ func (request *requestInfo) getCommand() commandInterface {
 		command = &commandGentle{request: request}
 	case "/amount":
 		command = &commandAmount{request: request}
+	case "/reply":
+		command = &commandReply{request: request}
+	case "/noreply":
+		command = &commandNoReply{request: request}
 	default:
 		command = &commandNotFound{request: request}
 	}
@@ -118,8 +125,8 @@ func (request *requestInfo) handleDelay() {
 	}
 }
 
-func (request *requestInfo) isAnswerNeeded(replyID *int64) bool {
-	return delayMap[request.updateMessage.Chat.ID] == 0 || replyID != nil
+func (request *requestInfo) isAnswerNeeded() bool {
+	return delayMap[request.updateMessage.Chat.ID] == 0
 }
 
 func (request *requestInfo) cleanDelay() {

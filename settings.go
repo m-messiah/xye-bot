@@ -12,6 +12,7 @@ type ChatSettings struct {
 	Enabled     bool
 	Gentle      bool
 	WordsAmount int
+	Reply       bool
 }
 
 type Settings struct {
@@ -60,6 +61,7 @@ func (s Settings) DefaultChatSettings() ChatSettings {
 		Enabled:     true,
 		Gentle:      true,
 		WordsAmount: 1,
+		Reply:       false,
 	}
 }
 
