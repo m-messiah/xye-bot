@@ -40,17 +40,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request.handleDelay()
-	replyID := request.getReplyIDIfNeeded()
-	if request.isAnswerNeeded(replyID) {
-		if replyID == nil {
-			request.cleanDelay()
-		}
-		output := request.huify()
-		if output != "" {
-			sendMessage(request.writer, request.updateMessage.Chat.ID, output, replyID, "")
-			return
-		}
+	if !request.isAnswerNeeded() {
+		return
 	}
+	output := request.huify()
+	if output == "" {
+		return
+	}
+	request.cleanDelay()
+	sendMessage(request.writer, request.updateMessage.Chat.ID, output, request.getReplyIDIfNeeded(), "")
 }
 
 func main() {
