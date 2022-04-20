@@ -113,7 +113,7 @@ func (request *requestInfo) getCommand() commandInterface {
 	return command
 }
 
-func (request *requestInfo) parseCommand() error {
+func (request *requestInfo) handleCommand() error {
 	return handleCommand(request.getCommand())
 }
 

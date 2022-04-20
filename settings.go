@@ -71,21 +71,24 @@ func (s Settings) EnsureCache(ctx context.Context, key string) {
 		var resultStruct ChatSettings
 		if err := settings.Get(ctx, datastoreKey, &resultStruct); err != nil {
 			resultStruct = s.DefaultChatSettings()
-			if err := settings.Put(ctx, datastoreKey, resultStruct); err != nil {
-				log.Printf("[%v] %s %+v - %s", key, datastoreKey, resultStruct, err.Error())
-			}
+			defer s.ForceSaveCache(ctx, key)
+		}
+		// Check too big delay
+		if resultStruct.Delay > 500 {
+			resultStruct.Delay = s.DefaultChatSettings().Delay
+			resultStruct.Enabled = false
+			defer s.ForceSaveCache(ctx, key)
 		}
 		s.cache[key] = &resultStruct
 	}
 }
 
-func (s Settings) SaveCache(ctx context.Context, key string) error {
-	return s.Put(ctx, s.datastoreKey(key), s.cache[key])
+func (s Settings) ForceSaveCache(ctx context.Context, key string) {
+	if err := s.SaveCache(ctx, key); err != nil {
+		log.Printf("[%v] %s %+v - %s", key, s.datastoreKey(key), s.cache[key], err.Error())
+	}
 }
 
-func (s Settings) SetDelay(ctx context.Context, key string, delay int) error {
-	chatSettings := s.cache[key]
-	chatSettings.Delay = delay
-	s.cache[key] = chatSettings
-	return s.SaveCache(ctx, key)
+func (s Settings) SaveCache(ctx context.Context, key string) error {
+	return s.Put(ctx, s.datastoreKey(key), s.cache[key])
 }

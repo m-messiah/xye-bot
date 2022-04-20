@@ -33,7 +33,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	if err = request.parseCommand(); err == nil {
+	if err = request.handleCommand(); err == nil {
 		return
 	}
 	if request.isStopped() {
