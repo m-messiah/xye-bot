@@ -53,7 +53,7 @@ func (commandRequest *commandHelp) Handle() error {
 		"  Режим ответов:\n"+
 		"    Включить: /reply\n"+
 		"    Выключить: /noreply\n"+
-		"  Частота ответов: `/delay N`, где _N_ любое любое натуральное число\n"+
+		"  Частота ответов: `/delay N`, где _N_ от `1` до `500`\n"+
 		"  Число хуифицируемых слов: `/amount N`, где _N_ от `1` до `10`\n"+
 		"  Для остановки используйте /stop\n"+
 		"  Для перезапуска используйте /start\n\n"+
@@ -72,13 +72,13 @@ func (commandRequest *commandDelay) Handle() error {
 	}
 	commandArg := command[len(command)-1]
 	tryDelay, err := strconv.Atoi(commandArg)
-	if err != nil || tryDelay < 1 || tryDelay > 1000000 {
-		commandRequest.request.answer("Неправильный аргумент, отправьте `/delay N`, где _N_ любое натуральное число меньше `1000000`", MarkdownV2)
+	if err != nil || tryDelay < 1 || tryDelay > 500 {
+		commandRequest.request.answer("Неправильный аргумент, отправьте `/delay N`, где _N_ любое натуральное число меньше `500`", MarkdownV2)
 		return nil
 	}
 	settings.cache[commandRequest.request.cacheID].Delay = tryDelay
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
-		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/delay N`, где _N_ любое натуральное число меньше `1000000`", err, MarkdownV2)
+		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/delay N`, где _N_ любое натуральное число меньше `500`", err, MarkdownV2)
 		return nil
 	}
 	commandRequest.request.answer("Я буду пропускать случайное число сообщений от `0` до `"+strconv.Itoa(settings.cache[commandRequest.request.cacheID].Delay)+"`", MarkdownV2)
