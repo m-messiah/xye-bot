@@ -71,15 +71,14 @@ func (s Settings) EnsureCache(ctx context.Context, key string) {
 		var resultStruct ChatSettings
 		if err := settings.Get(ctx, datastoreKey, &resultStruct); err != nil {
 			resultStruct = s.DefaultChatSettings()
-			defer s.ForceSaveCache(ctx, key)
 		}
 		// Check too big delay
 		if resultStruct.Delay > 500 {
 			resultStruct.Delay = s.DefaultChatSettings().Delay
 			resultStruct.Enabled = false
-			defer s.ForceSaveCache(ctx, key)
 		}
 		s.cache[key] = &resultStruct
+		s.ForceSaveCache(ctx, key)
 	}
 }
 
