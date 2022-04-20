@@ -112,6 +112,10 @@ func tryHuifyWord(text string) (string, bool) {
 		return "хуебот", true
 	}
 
+	if word == "путин" {
+		return "хуйло", true
+	}
+
 	if postfix, ok := isHuifyApplicable(word); ok {
 		return huifyWord(*postfix, getRules(word)), true
 	}
