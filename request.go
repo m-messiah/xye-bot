@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 )
 
 func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
-	bytes, _ := ioutil.ReadAll(r.Body)
+	bytes, _ := io.ReadAll(r.Body)
 	var update Update
 	err := json.Unmarshal(bytes, &update)
 	if err != nil {
