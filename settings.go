@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"sync"
 
 	"cloud.google.com/go/datastore"
 )
@@ -18,6 +19,7 @@ type ChatSettings struct {
 type Settings struct {
 	client *datastore.Client
 	cache  map[string]*ChatSettings
+	lock   sync.RWMutex
 }
 
 func initClient() *datastore.Client {
@@ -28,14 +30,26 @@ func initClient() *datastore.Client {
 	return datastoreClient
 }
 
-func NewSettings() Settings {
-	return Settings{
+func NewSettings() *Settings {
+	return &Settings{
 		client: initClient(),
 		cache:  make(map[string]*ChatSettings),
 	}
 }
 
-func (s Settings) Put(ctx context.Context, key *datastore.Key, src interface{}) (err error) {
+func (s *Settings) Set(key string, cs *ChatSettings) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.cache[key] = cs
+}
+
+func (s *Settings) Get(key string) *ChatSettings {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	return s.cache[key]
+}
+
+func (s *Settings) Put(ctx context.Context, key *datastore.Key, src interface{}) (err error) {
 	if _, err = s.client.Put(ctx, key, src); err != nil {
 		s.client = initClient()
 		_, err = s.client.Put(ctx, key, src)
@@ -43,7 +57,7 @@ func (s Settings) Put(ctx context.Context, key *datastore.Key, src interface{}) 
 	return err
 }
 
-func (s Settings) Get(ctx context.Context, key *datastore.Key, dst interface{}) (err error) {
+func (s *Settings) Lookup(ctx context.Context, key *datastore.Key, dst interface{}) (err error) {
 	if err = s.client.Get(ctx, key, dst); err != nil {
 		s.client = initClient()
 		err = s.client.Get(ctx, key, dst)
@@ -51,12 +65,12 @@ func (s Settings) Get(ctx context.Context, key *datastore.Key, dst interface{}) 
 	return err
 }
 
-func (s Settings) datastoreKey(key string) *datastore.Key {
+func (s *Settings) datastoreKey(key string) *datastore.Key {
 	return datastore.NameKey("ChatSettings", key, nil)
 }
 
-func (s Settings) DefaultChatSettings() ChatSettings {
-	return ChatSettings{
+func (s *Settings) DefaultChatSettings() *ChatSettings {
+	return &ChatSettings{
 		Delay:       4,
 		Enabled:     true,
 		Gentle:      true,
@@ -65,11 +79,11 @@ func (s Settings) DefaultChatSettings() ChatSettings {
 	}
 }
 
-func (s Settings) EnsureCache(ctx context.Context, key string) {
-	if _, ok := s.cache[key]; !ok {
+func (s *Settings) EnsureCache(ctx context.Context, key string) {
+	if v := s.Get(key); v == nil {
 		datastoreKey := s.datastoreKey(key)
-		var resultStruct ChatSettings
-		if err := settings.Get(ctx, datastoreKey, &resultStruct); err != nil {
+		var resultStruct *ChatSettings
+		if err := settings.Lookup(ctx, datastoreKey, resultStruct); err != nil {
 			resultStruct = s.DefaultChatSettings()
 		}
 		// Check too big delay
@@ -77,17 +91,17 @@ func (s Settings) EnsureCache(ctx context.Context, key string) {
 			resultStruct.Delay = s.DefaultChatSettings().Delay
 			resultStruct.Enabled = false
 		}
-		s.cache[key] = &resultStruct
+		s.Set(key, resultStruct)
 		s.ForceSaveCache(ctx, key)
 	}
 }
 
-func (s Settings) ForceSaveCache(ctx context.Context, key string) {
+func (s *Settings) ForceSaveCache(ctx context.Context, key string) {
 	if err := s.SaveCache(ctx, key); err != nil {
-		log.Printf("[%v] %s %+v - %s", key, s.datastoreKey(key), s.cache[key], err.Error())
+		log.Printf("[%v] %s %+v - %s", key, s.datastoreKey(key), s.Get(key), err.Error())
 	}
 }
 
-func (s Settings) SaveCache(ctx context.Context, key string) error {
-	return s.Put(ctx, s.datastoreKey(key), s.cache[key])
+func (s *Settings) SaveCache(ctx context.Context, key string) error {
+	return s.Put(ctx, s.datastoreKey(key), s.Get(key))
 }

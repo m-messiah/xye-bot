@@ -49,7 +49,7 @@ func (request *requestInfo) answerErrorWithLog(message string, err error, parseM
 }
 
 func (request *requestInfo) isReplyNeeded() bool {
-	return settings.cache[request.cacheID].Reply ||
+	return settings.Get(request.cacheID).Reply ||
 		(request.updateMessage.ReplyTo != nil &&
 			request.updateMessage.ReplyTo.From.Username != nil &&
 			strings.Compare(*request.updateMessage.ReplyTo.From.Username, "xye_bot") == 0)
@@ -63,7 +63,7 @@ func (request *requestInfo) getReplyIDIfNeeded() *int64 {
 }
 
 func (request *requestInfo) isStopped() bool {
-	return !settings.cache[request.cacheID].Enabled
+	return !settings.Get(request.cacheID).Enabled
 }
 
 func (request *requestInfo) getStatusString() string {
@@ -121,7 +121,7 @@ func (request *requestInfo) handleDelay() {
 	if _, ok := delayMap[request.updateMessage.Chat.ID]; ok {
 		delayMap[request.updateMessage.Chat.ID]--
 	} else {
-		delayMap[request.updateMessage.Chat.ID] = rand.Intn(settings.cache[request.cacheID].Delay + 1)
+		delayMap[request.updateMessage.Chat.ID] = rand.Intn(settings.Get(request.cacheID).Delay + 1)
 	}
 }
 
@@ -134,5 +134,6 @@ func (request *requestInfo) cleanDelay() {
 }
 
 func (request *requestInfo) huify() string {
-	return Huify(request.updateMessage.Text, settings.cache[request.cacheID].Gentle, rand.Intn(settings.cache[request.cacheID].WordsAmount)+1)
+	cs := settings.Get(request.cacheID)
+	return Huify(request.updateMessage.Text, cs.Gentle, rand.Intn(cs.WordsAmount)+1)
 }
