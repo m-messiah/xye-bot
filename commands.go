@@ -14,15 +14,13 @@ func (commandRequest *commandStart) Handle() error {
 		"Я буду хуифицировать некоторые из ваших фраз\n" +
 		"Сейчас режим вежливости *%s*\n" +
 		"За подробностями в /help"
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Enabled = false
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Enabled = true
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
 		return nil
 	}
-	if settings.Get(commandRequest.request.cacheID).Gentle {
+	if settings.cache[commandRequest.request.cacheID].Gentle {
 		message = fmt.Sprintf(message, "включен")
 	} else {
 		message = fmt.Sprintf(message, "отключен")
@@ -34,9 +32,7 @@ func (commandRequest *commandStart) Handle() error {
 type commandStop botCommand
 
 func (commandRequest *commandStop) Handle() error {
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Enabled = false
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Enabled = false
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
@@ -70,9 +66,8 @@ type commandDelay botCommand
 
 func (commandRequest *commandDelay) Handle() error {
 	command := strings.Fields(commandRequest.request.updateMessage.Text)
-	current := settings.Get(commandRequest.request.cacheID)
 	if len(command) < 2 {
-		commandRequest.request.answer("Сейчас я пропускаю случайное число сообщений от `0` до `"+strconv.Itoa(current.Delay)+"`", MarkdownV2)
+		commandRequest.request.answer("Сейчас я пропускаю случайное число сообщений от `0` до `"+strconv.Itoa(settings.cache[commandRequest.request.cacheID].Delay)+"`", MarkdownV2)
 		return nil
 	}
 	commandArg := command[len(command)-1]
@@ -81,13 +76,12 @@ func (commandRequest *commandDelay) Handle() error {
 		commandRequest.request.answer("Неправильный аргумент, отправьте `/delay N`, где _N_ любое натуральное число меньше `500`", MarkdownV2)
 		return nil
 	}
-	current.Delay = tryDelay
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Delay = tryDelay
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/delay N`, где _N_ любое натуральное число меньше `500`", err, MarkdownV2)
 		return nil
 	}
-	commandRequest.request.answer("Я буду пропускать случайное число сообщений от `0` до `"+strconv.Itoa(current.Delay)+"`", MarkdownV2)
+	commandRequest.request.answer("Я буду пропускать случайное число сообщений от `0` до `"+strconv.Itoa(settings.cache[commandRequest.request.cacheID].Delay)+"`", MarkdownV2)
 	delete(delayMap, commandRequest.request.updateMessage.Chat.ID)
 	return nil
 }
@@ -95,9 +89,7 @@ func (commandRequest *commandDelay) Handle() error {
 type commandHardcore botCommand
 
 func (commandRequest *commandHardcore) Handle() error {
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Gentle = false
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Gentle = false
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
@@ -110,9 +102,7 @@ func (commandRequest *commandHardcore) Handle() error {
 type commandGentle botCommand
 
 func (commandRequest *commandGentle) Handle() error {
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Gentle = true
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Gentle = true
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
@@ -125,9 +115,7 @@ func (commandRequest *commandGentle) Handle() error {
 type commandReply botCommand
 
 func (commandRequest *commandReply) Handle() error {
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Reply = true
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Reply = true
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
@@ -140,9 +128,7 @@ func (commandRequest *commandReply) Handle() error {
 type commandNoReply botCommand
 
 func (commandRequest *commandNoReply) Handle() error {
-	current := settings.Get(commandRequest.request.cacheID)
-	current.Reply = false
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].Reply = false
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.logWarn(err)
 		// Do not send error to command
@@ -156,9 +142,8 @@ type commandAmount botCommand
 
 func (commandRequest *commandAmount) Handle() error {
 	command := strings.Fields(commandRequest.request.updateMessage.Text)
-	current := settings.Get(commandRequest.request.cacheID)
 	if len(command) < 2 {
-		commandRequest.request.answer("Сейчас я хуифицирую случайное число слов от `1` до `"+strconv.Itoa(current.WordsAmount)+"`", MarkdownV2)
+		commandRequest.request.answer("Сейчас я хуифицирую случайное число слов от `1` до `"+strconv.Itoa(settings.cache[commandRequest.request.cacheID].WordsAmount)+"`", MarkdownV2)
 		return nil
 	}
 	commandArg := command[len(command)-1]
@@ -167,13 +152,12 @@ func (commandRequest *commandAmount) Handle() error {
 		commandRequest.request.answer("Неправильный аргумент, отправьте `/amount N`, где _N_ любое натуральное число не больше `10`", MarkdownV2)
 		return nil
 	}
-	current.WordsAmount = tryWordsAmount
-	settings.Set(commandRequest.request.cacheID, current)
+	settings.cache[commandRequest.request.cacheID].WordsAmount = tryWordsAmount
 	if err := settings.SaveCache(commandRequest.request.ctx, commandRequest.request.cacheID); err != nil {
 		commandRequest.request.answerErrorWithLog("Не удалось сохранить, отправьте еще раз `/amount N`, где _N_ любое натуральное число не больше `10`", err, MarkdownV2)
 		return nil
 	}
-	commandRequest.request.answer("Я буду хуифицировать случайное число слов от `1` до `"+strconv.Itoa(settings.Get(commandRequest.request.cacheID).WordsAmount)+"`", MarkdownV2)
+	commandRequest.request.answer("Я буду хуифицировать случайное число слов от `1` до `"+strconv.Itoa(settings.cache[commandRequest.request.cacheID].WordsAmount)+"`", MarkdownV2)
 	return nil
 }
 
