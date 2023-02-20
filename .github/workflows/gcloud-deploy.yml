@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - id: deploy
-      uses: google-github-actions/deploy-appengine@main
+      uses: google-github-actions/deploy-appengine@v0.8.2
       with:
         credentials: ${{ secrets.GCLOUD_SECRET }}
         project_id: "xye-bot"
