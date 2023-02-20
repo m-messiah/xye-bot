@@ -13,7 +13,7 @@ const MarkdownV2 = "MarkdownV2"
 
 var (
 	delayMap map[int64]int
-	settings Settings
+	settings *Settings
 )
 
 func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64, parseMode string) {
