@@ -3,18 +3,21 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"time"
 )
 
-const MarkdownV2 = "MarkdownV2"
-
-var (
-	delayMap map[int64]int
-	settings Settings
+const (
+	// BotName is the telegram name of the bot. Needs for commands identification
+	BotName = "xye_bot"
+	// DelayLimit is the upper limit of randomly skipped messages.
+	// for example, 4 means bot would skip random amount of messages between 1 and 4.
+	DelayLimit = 4
+	// WordsAmount is the amount of words from the message to apply modification
+	WordsAmount = 1
 )
+
+var delayMap map[int64]int
 
 func sendMessage(w http.ResponseWriter, chatID int64, text string, replyToID *int64, parseMode string) {
 	var msg Response
@@ -36,25 +39,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err = request.handleCommand(); err == nil {
 		return
 	}
-	if request.isStopped() {
-		return
-	}
 	request.handleDelay()
 	if !request.isAnswerNeeded() {
 		return
 	}
-	output := request.huify()
+	output := request.Modify()
 	if output == "" {
 		return
 	}
 	request.cleanDelay()
-	sendMessage(request.writer, request.updateMessage.Chat.ID, output, request.getReplyIDIfNeeded(), "")
+	sendMessage(request.writer, request.updateMessage.Chat.ID, output, &request.updateMessage.ID, "")
 }
 
 func main() {
 	delayMap = make(map[int64]int)
-	rand.Seed(time.Now().UTC().UnixNano())
-	settings = NewSettings()
 	http.HandleFunc("/", handler)
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -22,15 +22,12 @@ const (
 )
 
 // Huify given text by gentleness and limited amount
-func Huify(text string, gentle bool, amount int) string {
+func Huify(text string, amount int) string {
 	huified := tryHuify(text, amount)
 	if huified == "" {
 		return ""
 	}
-	if gentle {
-		return suggestions[rand.Intn(len(suggestions))] + huified
-	}
-	return huified
+	return suggestions[rand.Intn(len(suggestions))] + huified
 }
 
 func tryHuify(text string, amount int) string {
