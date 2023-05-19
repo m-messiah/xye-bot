@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -32,10 +31,6 @@ func newRequest(w http.ResponseWriter, r *http.Request) (*requestInfo, error) {
 		cacheID:       strconv.FormatInt(updateMessage.Chat.ID, 10),
 	}
 	return request, nil
-}
-
-func (request *requestInfo) logWarn(err error) {
-	log.Printf("[%v] %s", request.updateMessage.Chat.ID, err.Error())
 }
 
 func (request *requestInfo) answer(message, parseMode string) {
