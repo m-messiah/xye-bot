@@ -14,4 +14,4 @@ jobs:
       with:
         credentials: ${{ secrets.GCLOUD_SECRET }}
         project_id: "xye-bot"
-        version: github
+        version: gentle
