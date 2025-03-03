@@ -9,10 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - shell: bash
+      env:
+        GCLOUD_SECRET=${{ secrets.GCLOUD_SECRET }}
+      run: |
+        echo "$GCLOUD_SECRET" > .gcloud_secret
     - id: deploy
       uses: google-github-actions/deploy-appengine@v2
       with:
         project_id: "xye-bot"
         version: go123
         env_vars: |
-          GOOGLE_GHA_CREDS_PATH=${{ secrets.GCLOUD_SECRET }}
+          GOOGLE_GHA_CREDS_PATH=.gcloud_secret
