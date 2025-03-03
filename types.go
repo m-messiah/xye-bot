@@ -44,7 +44,7 @@ type requestInfo struct {
 }
 
 type botCommand struct {
-	request *requestInfo //nolint:structcheck
+	request *requestInfo
 }
 
 type commandInterface interface {
