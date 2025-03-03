@@ -11,7 +11,7 @@ const (
 	// BotName is the telegram name of the bot. Needs for commands identification
 	BotName = "xye_bot"
 	// DelayLimit is the upper limit of randomly skipped messages.
-	// for example, 4 means bot would skip random amount of messages between 1 and 4.
+	// For example, 4 means bot would skip random amount of messages between 1 and 4.
 	DelayLimit = 4
 	// WordsAmount is the amount of words from the message to apply modification
 	WordsAmount = 1

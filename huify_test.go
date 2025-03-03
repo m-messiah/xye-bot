@@ -142,7 +142,7 @@ func TestDashed(t *testing.T) {
 func TestUrl(t *testing.T) {
 	tests := []TestPhraseParams{
 		{"сайт.рф", 1, "хуяйтрф"},
-		{"http://www.ru", 1, ""},
+		{"https://www.ru", 1, ""},
 	}
 
 	for _, test := range tests {
