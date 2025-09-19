@@ -1,7 +1,26 @@
-## Xye telegram bot
+This is a simple [Javascript Service Worker](https://python.org/) server template running with [WinterJS](https://github.com/wasmerio/winterjs).
 
-[![CodeQL](https://github.com/m-messiah/xye-bot/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/m-messiah/xye-bot/actions/workflows/codeql-analysis.yml)[![Deploy](https://github.com/m-messiah/xye-bot/actions/workflows/gcloud-deploy.yml/badge.svg)](https://github.com/m-messiah/xye-bot/actions/workflows/gcloud-deploy.yml)[![Maintainability](https://api.codeclimate.com/v1/badges/527e1fba773b9f9e0765/maintainability)](https://codeclimate.com/github/m-messiah/xye-bot/maintainability)
+> This starter's full tutorial is available [here](https://docs.wasmer.io/edge/quickstart/js-wintercg).
 
-+   [Telegram](https://telegram.me/xye_bot)
-+   [StoreBot](https://storebot.me/bot/xye_bot)
+## Usage
 
+Modify the logic of your the Javascript worker in the `src/index.js` file.
+
+You can run the JS Service Worker locally with (check out the [Wasmer install guide](https://docs.wasmer.io/install)):
+
+```bash
+wasmer run .
+```
+
+Open [http://localhost:8080](http://localhost:8080) with your browser to see the worker working!
+
+
+## Deploy on Wasmer Edge
+
+The easiest way to deploy your Javascript Worker is to use the [Wasmer Edge](https://wasmer.io/products/edge).
+
+Live example: https://wasmer-js-worker-starter.wasmer.app/
+
+```bash
+wasmer deploy
+```
