@@ -19,7 +19,7 @@ Open [http://localhost:8080](http://localhost:8080) with your browser to see the
 Unit tests use the built-in Node.js test runner, no dependencies to install. They load `src/index.js` with a shimmed `addEventListener` and send Telegram-like updates to the fetch handler.
 
 ```bash
-npm test
+node --test "tests/*.test.mjs"
 ```
 
 Requires Node.js 24 or newer. The same command runs in CI on every push and pull request to `main` (`.github/workflows/test.yml`).
