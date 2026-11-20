@@ -1,0 +1,8 @@
+{
+  "name": "xye-bot",
+  "private": true,
+  "description": "Telegram bot that huifies phrases, runs on Wasmer Edge (WinterJS)",
+  "scripts": {
+    "test": "node --test tests/"
+  }
+}
