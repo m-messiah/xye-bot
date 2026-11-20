@@ -274,7 +274,13 @@ async function handler(request) {
     try {
         const body = await request.text();
         const requestInfo = newRequestFromBody(body);
-        
+
+        // Stickers, photos, voice, join/leave events etc. carry no text.
+        // Acknowledge them, otherwise Telegram retries the update forever.
+        if (typeof requestInfo.updateMessage.text !== 'string') {
+            return new Response('', { status: 200 });
+        }
+
         try {
             const commandResult = requestInfo.handleCommand();
             if (commandResult === null && requestInfo.lastResponse) {
